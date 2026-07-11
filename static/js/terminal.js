@@ -148,9 +148,27 @@
         });
 
         // Window Controls
-        header.querySelector('.dot.close').addEventListener('click', closeTerminal);
-        header.querySelector('.dot.minimize').addEventListener('click', toggleMinimize);
-        header.querySelector('.dot.maximize').addEventListener('click', toggleMaximize);
+        header.querySelector('.dot.close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeTerminal();
+        });
+        header.querySelector('.dot.minimize').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMinimize();
+        });
+        header.querySelector('.dot.maximize').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMaximize();
+        });
+
+        // Click on minimized bubble to restore it
+        terminalContainer.addEventListener('click', (e) => {
+            if (terminalContainer.classList.contains('minimized')) {
+                e.stopPropagation();
+                toggleMinimize();
+                playBeepSound(600, 0.08, 'sine');
+            }
+        });
 
         // Track Input Buffers
         terminalInput.addEventListener('input', () => {
