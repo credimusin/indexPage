@@ -1,0 +1,40 @@
+================ BMO DOSSIER / CV ================
+
+Name: Maksim B (BMO)
+Role: Backend Developer & Infrastructure Architect
+Status: A real living boy (highly optimized, Math major)
+Core Focus: Engineering clean backend logic, orchestrating
+highly available databases, and deploying infrastructure-as-code (IaC).
+
+[ TECHNICAL ARMAMENT ]
+Languages:   PHP 8+ (Laravel), Python 3+ (Django), Go, JavaScript, SQL, Bash
+DevOps/IaC:  Docker, Kubernetes, GitHub Actions (CI/CD), Ansible
+Databases:   PostgreSQL, ClickHouse, Redis
+Monitoring:  Grafana, Sentry
+OS/Systems:  Linux (I use Fedora Atomic btw) 
+
+[ EXPERIENCE HISTORY ]
+* Backend Developer (Dec 2025 - Present) 
+  Designing server-side logic for B2B web applications using PHP 8 & Laravel.
+  Optimizing complex PostgreSQL queries (EXPLAIN plans, indexes, partitioning).
+  Covering codebase with robust PHPUnit tests. Alongside coding, designing
+  resilient project architecture, IaC deployments, and CI/CD pipelines.
+* Deputy Head of Service Desk & Sysadmin (Aug 2020 - Dec 2025) 
+  Managed support engineers, automated Jira integrations & data pipelines
+  with Python (REST API).
+  Administered Linux servers, MDM configurations, and automated workstations.
+* Infrastructure Support Engineer (Nov 2016 - Aug 2020) 
+  Designed failover architectures for web servers (load balancing, database
+  redundancy). Configured Zabbix monitoring and automated business processes.
+* Early Career & Operations (2012 - 2016)
+  Sysadmin maintaining Linux/Windows nodes, VPNs, and AD.
+  Support shift lead utilizing Python automations.
+
+[ EDUCATION & ROOTS ]
+- B.S. in Mathematics, Dahl East Ukrainian National University (2004 - 2009)
+- Mentorship & Computer Science Deep-Dive (Cadolabs / DevDairy, 2025 - 2026)
+
+[ VULNERABILITIES & COGNITIVE FLUIDS ]
+- Addicted to warm cookies (chocolate chip preferred).
+- Requires coffee, hot tea or warm milk to sustain database operations.
+- Displays emotional dependency on positive shell console reviews.

@@ -1,0 +1,17 @@
+[Project: imaginal]
+Website: https://imaginal.dev/
+Repository: https://github.com/credimusin/indexPage
+
+Description:
+An interactive personal developer website styled as a retro-futuristic terminal interface.
+
+History & Evolution:
+Imaginal was originally conceived as my personal developer website. Initially, it was just a simple information page, but I lost that original repository. Later, I experimented with Cloudflare Pages and deployed a similar portfolio project using a frontend framework. Over time, I grew dissatisfied with it, took it down, hid the repository, and left a simple placeholder page. Recently, I felt the urge to build something more than just a placeholder—something that looks simple on the surface but hides a wealth of interesting, fun, and engaging features underneath. 
+This is a passion project. It might seem boring to regular users, but it's meant for those who like to look under the hood and explore. From one curious mind to another. I think this is especially important nowadays, in the era of AI, when everyone is chasing something elusive and no one takes a moment to stop and look around. To you, reading this right now: respect! I hope you're not a creep or a scammer, and I hope you find this project interesting and educational.
+
+Technical Features:
+- Zero-Framework Architecture: Built entirely using vanilla JS, HTML5, and CSS variables for a lightweight and lightning-fast experience without the overhead of heavy frontend frameworks.
+- Serverless & SPA: Designed as a single-page application (SPA) optimized for deployment on Cloudflare Pages.
+- Interactive Retro UI: Features a fully interactive CLI terminal simulation, custom virtual filesystem, a simulated Vim editor, sound effects, and easter eggs.
+
+Tech stack: HTML5, CSS Variables, Vanilla JavaScript, ESLint, GitHub Actions.

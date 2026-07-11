@@ -1,0 +1,10 @@
+=== ABOUT ME ===
+Hi! I'm Maksim (aka BMO) — a backend developer based in Saint Petersburg.
+
+I have 15+ years of journey in IT.
+Currently, I write PHP (Laravel), Python (Django), JS and Go code, while concurrently
+architecting containerized DevOps infrastructure (Docker, K8s, Ansible). 
+
+Type 'cat dossier.txt' to read my full dossier.
+Type 'cd projects' to check out my project folders.
+Type 'cat contact.txt' to get my coordinates.

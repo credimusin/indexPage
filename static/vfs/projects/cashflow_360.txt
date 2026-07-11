@@ -1,0 +1,22 @@
+[Project: CashFlow360]
+Demo: https://cashflow360.pro/
+Repository: https://github.com/credimusin/CashFlow360
+
+Description:
+A lightweight and secure personal/departmental budgeting tool designed to replace spreadsheets with easy-to-use forms, statistics, and a clean interface.
+
+History & Evolution:
+- July 2020 (CRP): The project began as a budget-tracking tool for an IT department—a direct replacement for Excel spreadsheets, complete with forms, statistics, and a nice visual layout. At the time, it was called CRP. I don't remember the exact acronym anymore, but it was something related to payment registration. The project didn't last long because I ended up changing jobs, and the tool had been built specifically to solve that one particular problem.
+- August 2023 (Payment Register): The next iteration was my attempt to return to development and once again solve the budgeting dilemma: working in Excel is a pain, and massive CRMs are just intimidating. That's how "Payment Register" was born in August 2023 (the source code is open on GitHub: https://github.com/credimusin/Payment-Register). I worked on it for about a year, but it ended due to personnel changes again—though this time, they weren't mine. A complex workflow slowed down adoption, and the business's resistance to new ideas meant the project couldn't be fully utilized or developed further. So, development came to a halt.
+- August 2025 (CashFlow / CashFlow360): I took on CashFlow (without the "360" yet) in August 2025. This time, I wasn't building it for anyone in particular, but I had this lingering feeling of unfinished business from my past projects and a strong desire to keep growing as a programmer. I collaborated with a designer to create the interface (once the designer's website is live, I'll add a link to it here). I tried running some targeted ads and marketing to attract traffic, but ultimately, the tool went unnoticed. For a while, I paid for a cheap hosting server—by the way, the entire project ran on a minimal VPS with just the essentials. But when I discovered PWAs, I got the idea to refactor the whole project into a single-page app and deploy it on Cloudflare Pages to keep it alive as a showcase of my skills.
+
+Technical Features:
+- Functional Paradigm: Implemented using a functional approach rather than rigid OOP, keeping the state logic direct and easy to follow.
+- No Container Overhead: Avoided Docker to keep the environment minimal and lightweight.
+- Vanilla JS Frontend: Built without frontend frameworks, ensuring maximum performance, rapid load times, and a zero-dependency footprint.
+- Collaboration-First: Features collaborative workflow design, table interactions via simplified forms, and a transaction approval system.
+
+Usage:
+If you find this project interesting, feel free to fork the repository and use it for your own needs. And if you want to show some appreciation for the work, buying me a coffee is always welcome!
+
+Tech stack: Python, Django, SQLite, PostgreSQL, PWA, GitHub Actions, Cloudflare.

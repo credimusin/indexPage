@@ -1,0 +1,17 @@
+[Project: Drills]
+Demo: https://drills.imaginal.dev/
+
+Description:
+A web-based vocabulary learning and drill management system designed to help language learners memorize words using their own custom dictionaries.
+
+History & Evolution:
+This project started when I wanted to solve a real problem for a group of people studying English who needed to memorize words using their own personalized dictionaries. For me, it was also a great opportunity to practice and get hands-on experience developing with Laravel. Today, the project is fully live and actively used by students learning English. While it is still under active development, it is already very pleasant to use and, most importantly, was built purely to be helpful.
+
+Technical Features:
+- Web & PWA Integration: Successfully combined a classic web application architecture with Progressive Web App (PWA) capabilities to provide a smooth, mobile-first user experience.
+- Automated CI/CD: Configured GitHub Actions pipelines running PHPUnit tests, PHPStan static analysis (at max level), and Laravel Pint code styling to ensure high-quality code and test coverage.
+
+Usage:
+Sign up and drills the words.
+
+Tech stack: PHP 8+, Laravel, PostgreSQL, PWA, PHPUnit, GitHub Actions.

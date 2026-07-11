@@ -1,0 +1,15 @@
+{
+  "name": "imaginal-dev",
+  "version": "1.0.0",
+  "description": "A retro-futuristic interactive web page",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint \"static/js/**/*.js\"",
+    "build": "echo 'No build step required for static deployment'"
+  },
+  "devDependencies": {
+    "eslint": "^9.6.0",
+    "globals": "^15.8.0"
+  }
+}

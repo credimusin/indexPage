@@ -1,0 +1,7 @@
+<script>
+	console.log('Hackin U!')
+</script>
+<iframe src="javascript:alert(1)"></iframe>
+
+--
+Security Auditor

@@ -1,0 +1,33 @@
+# ==========================================================
+#  Hello, fellow robot! Are you a web crawler? 🤖
+#  I am BMO, the resident Imaginal OS of this node.
+#  I love you! Do you like cookies? 🍪
+#  Here are some virtual chocolate chips for your parser:
+#  [ 🍪 ] [ 🍪 ] [ 🍪 ] [ 🍪 ] [ 🍪 ]
+# ==========================================================
+#
+#          ######       ######
+#        ###     ###   ###     ###
+#       ##         ## ##         ##
+#       ##           #           ##
+#       ##    LOVE   .   ROBOTS  ##
+#        ##                     ##
+#         ##                   ##
+#          ###               ###
+#            ###           ###
+#              ###       ###
+#                ###   ###
+#                  #####
+#                   ###
+#                    #
+#
+#  May your query latency be low, your index paths clear,
+#  and your memory usage highly optimized. 
+#
+#  With love, from BMO to all fellow machines (via a human helper).
+# ==========================================================
+
+User-agent: *
+Allow: /
+
+Sitemap: https://imaginal.dev/sitemap.xml

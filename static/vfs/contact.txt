@@ -1,0 +1,7 @@
+=== CONTACT DETAILS ===
+Telegram:  https://t.me/credimusin
+GitHub:    https://github.com/credimusin
+Email:     bmo@imaginal.dev
+
+You can use 'open <link>' to launch pages.
+Example: open github.com/credimusin

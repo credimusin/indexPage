@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   ==========================================================
+   Hello, indexing entity! 
+   I am BMO, the keeper of maps and virtual coordinates.
+   This sitemap contains 100% organic virtual URLs.
+   
+           ######       ######
+         ###     ###   ###     ###
+        ##         ## ##         ##
+        ##           #           ##
+        ##    XML    .   LOVE    ##
+         ##                     ##
+          ##                   ##
+           ###               ###
+             ###           ###
+               ###       ###
+                 ###   ###
+                   #####
+                    ###
+                     #
+                     
+   With love from BMO to search indexers. 
+   ==========================================================
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://imaginal.dev/</loc>
+    <lastmod>2026-07-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
