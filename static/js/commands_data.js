@@ -25,6 +25,7 @@
         { name: "secret &lt;key&gt;", desc: "Decrypt cryptographic database lock." },
         { name: "touch &lt;file&gt;", desc: "Create a file inside virtual environment." },
         { name: "time", desc: "Show local time." },
+        { name: "game", desc: "Launch retro space rocks arcade shooter game." },
         { name: "tips", desc: "Get a piece of highly constructive developer advice." },
         { name: "uname", desc: "Print operating system details." },
         { name: "vim &lt;file&gt;", desc: "Edit files in full-screen BIM-like console interface." },
@@ -53,7 +54,7 @@
         "Did you know? Clouds morph into cats, ducks, and whales when you aren't looking.",
         "Running low on memory? Just type 'sudo rm -rf /' to clean up.",
         "Type 'man secret' to learn about database encryption.",
-        "Bored? Type 'matrix' and enjoy the green code rain.",
+        "Bored? Try to beat BMO's high score in 'game'!",
         "Type 'whoami' to inspect your current profile.",
         "Need emotional support? Just type 'bmo' and wait for a friendly beep.",
         "BMO's database runs on tea and cookies. Got any chocolate chip cookies?",
@@ -116,6 +117,11 @@
             desc: "BIM Text Editor (Vim Improved).",
             linux: "Vim (Vi IMproved) is a highly configurable text editor built to enable efficient text editing.",
             project: "Officially known as <b>BIM</b> (BMO IMproved) on ImaginalOS. It launches a full-screen retro text editor overlay with status and colon command bars. Supports Command mode (press ESC), Insert mode (press 'i'), and Colon commands (:w, :q, :wq, :q!)."
+        },
+        game: {
+            desc: "Play retro space rocks arcade game (alias: spacerock).",
+            linux: "Not a standard Unix command, though often referenced as the 'asteroids' clone game.",
+            project: "Launches a neon retro space shooter inside the console window. Face incoming waves of drifting asteroids. Earn score points, beat high scores (saved in localStorage), and show off your spaceship maneuvering skills."
         },
         banano: {
             desc: "Alias for 'vim' (BIM editor, yellow skin).",

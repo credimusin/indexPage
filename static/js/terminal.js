@@ -141,7 +141,7 @@
         // Bind clicks to hidden input focus
         body.addEventListener('click', (e) => {
             if (e.target.tagName !== 'A' && e.target.closest('a') === null) {
-                if (window.imaginalOS.shellState !== 'vim') {
+                if (window.imaginalOS.shellState !== 'vim' && window.imaginalOS.shellState !== 'spacerock') {
                     terminalInput.focus();
                 }
             }
@@ -493,6 +493,16 @@
                 writeOutput(out);
                 break;
             }
+            case 'game':
+            case 'spacerock':
+            case 'spacerocks':
+            case 'asteroids':
+                if (window.imaginalOS.runSpaceRock) {
+                    window.imaginalOS.runSpaceRock();
+                } else {
+                    writeOutput("<span class='err'>game: failed to load game module</span><br>");
+                }
+                break;
             case 'matrix':
                 window.imaginalOS.startMatrix();
                 break;
@@ -598,7 +608,7 @@
         
         if (parts.length === 1) {
             const cmd = parts[0].toLowerCase();
-            const commands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'nano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips'];
+            const commands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'nano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'spacerock', 'spacerocks', 'asteroids', 'game'];
             const matches = commands.filter(c => c.startsWith(cmd));
             if (matches.length === 1) {
                 terminalInput.value = matches[0] + ' ';
@@ -705,6 +715,9 @@ Administrator: BMO
             }
             if (window.imaginalOS.shellState === 'vim') {
                 window.imaginalOS.handleVimKey(e);
+                return;
+            }
+            if (window.imaginalOS.shellState === 'spacerock') {
                 return;
             }
         }

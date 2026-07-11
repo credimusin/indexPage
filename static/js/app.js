@@ -56,6 +56,7 @@
             `static/js/commands_data.js?v=${version}`,
             `static/js/vfs.js?v=${version}`,
             `static/js/vim.js?v=${version}`,
+            `static/js/spacerock.js?v=${version}`,
             `static/js/commands.js?v=${version}`,
             `static/js/terminal.js?v=${version}`
         ];
