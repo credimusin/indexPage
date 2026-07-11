@@ -1,10 +1,22 @@
-=== ABOUT ME ===
-Hi! I'm Maksim (aka BMO) — a backend developer based in Saint Petersburg.
+=== ABOUT THIS PROJECT ===
 
-I have 15+ years of journey in IT.
-Currently, I write PHP (Laravel), Python (Django), JS and Go code, while concurrently
-architecting containerized DevOps infrastructure (Docker, K8s, Ansible). 
+Welcome, curious User! 
 
-Type 'cat dossier.txt' to read my full dossier.
-Type 'cd projects' to check out my project folders.
-Type 'cat contact.txt' to get my coordinates.
+First things first: ImaginalOS is created purely for fun, nostalgia, and coding amusement.
+BMO promises that all those scary telemetry scans and "security breaches" are just playful simulations — we do not steal your data or harvest your soul.
+Your privacy and biological chassis are completely safe here!
+
+Most of the features and hidden secrets on this website are designed for slightly more
+advanced users who enjoy typing commands instead of clicking buttons.
+If you actually managed to navigate here, type 'cat about.txt', and are reading these exact
+words — you are officially a certified genius and a wonderful human! 
+
+We really hope you find all the quirks, jokes, and Easter eggs scattered around this terminal
+as fun as we found coding them.
+
+BR BMO
+
+Commands to explore next:
+• Type 'cat dossier.txt'  to read Maksim's full dossier
+• Type 'cd projects'      to explore project repositories
+• Type 'cat contact.txt'  to get our coordinates
