@@ -201,7 +201,7 @@
     }
 
     function getGeoAndWeather() {
-        // Try ipapi.co first (has good compatibility, falls back to ipwho.is on 429 rate limits)
+        // 1. Try ipapi.co first
         fetch('https://ipapi.co/json/')
             .then(res => {
                 if (!res.ok) throw new Error("CORS or network error");
@@ -223,7 +223,31 @@
                 throw new Error("Invalid payload");
             })
             .catch(() => {
-                // Fallback to ipwho.is
+                // 2. Fallback to ipinfo.io
+                return fetch('https://ipinfo.io/json')
+                    .then(res => {
+                        if (!res.ok) throw new Error("CORS or network error");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && data.ip) {
+                            const loc = (data.loc || '').split(',');
+                            return {
+                                ip: data.ip,
+                                city: data.city || 'Saint Petersburg',
+                                region: data.region || 'Saint Petersburg',
+                                country: data.country || 'Russia',
+                                isp: data.org || 'ISP',
+                                latitude: parseFloat(loc[0]) || FALLBACK_LAT,
+                                longitude: parseFloat(loc[1]) || FALLBACK_LON,
+                                timezone: data.timezone || 'Europe/Moscow'
+                            };
+                        }
+                        throw new Error("Invalid ipinfo payload");
+                    });
+            })
+            .catch(() => {
+                // 3. Fallback to ipwho.is
                 return fetch('https://ipwho.is/')
                     .then(res => {
                         if (!res.ok) throw new Error("CORS or network error");

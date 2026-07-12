@@ -143,10 +143,11 @@
             const url = content.replace('IMAGE:', '');
             window.imaginalOS.writeOutput(`🖼️ <b>[Image Viewer: ${window.imaginalOS.escapeHtml(filename)}]</b><br>----------------------------------------<br><img src="${url}" style="width: 380px; max-width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 8px; border: 1.5px solid rgba(0,255,128,0.25); box-shadow: 0 0 15px rgba(0,255,128,0.15); margin: 10px 0; display: block;" /><br>`);
         } else {
+            let header = '';
             if (batMode) {
-                window.imaginalOS.writeOutput(` 🦇 <b>[Batting: ${window.imaginalOS.escapeHtml(filename)}]</b><br>----------------------------------------<br>`);
+                header = ` 🦇 <span class="secret">[BAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
             } else {
-                window.imaginalOS.writeOutput(`🐱 <b>[Catting: ${window.imaginalOS.escapeHtml(filename)}]</b><br>----------------------------------------<br>`);
+                header = `🐱 <span class="secret">[CAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
             }
             
             const isLinkAllowed = (filename === 'contact.txt' || (res.path && res.path.includes('projects')));
@@ -155,13 +156,8 @@
                 let escaped = window.imaginalOS.escapeHtml(line);
                 
                 if (isLinkAllowed) {
-                    // Auto-convert URLs to clickable anchors
                     escaped = escaped.replace(/(https?:\/\/[^\s&<"';()]+)/g, '<a href="$1" target="_blank" style="color: #64ffda; text-decoration: underline; cursor: pointer;">$1</a>');
-                    
-                    // Auto-convert Telegram @usernames
                     escaped = escaped.replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g, '$1<a href="https://t.me/$2" target="_blank" style="color: #64ffda; text-decoration: underline; cursor: pointer;">@$2</a>');
-                    
-                    // Auto-convert emails to mailto links
                     escaped = escaped.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" style="color: #64ffda; text-decoration: underline; cursor: pointer;">$1</a>');
                 }
                 
@@ -173,13 +169,13 @@
                 return escaped;
             }).join('<br>');
             
-            window.imaginalOS.writeOutput(formatted + '<br>');
+            window.imaginalOS.writeOutput(header + formatted + '<br>');
         }
     }
 
-    function runMkdir(pathStr) {
+    async function runMkdir(pathStr) {
         if (!pathStr) {
-            window.imaginalOS.writeOutput("<span class='err'>mkdir: missing operand</span><br>");
+            await writeTyped("<span class='err'>mkdir: missing operand</span><br>", 2);
             return;
         }
         
@@ -193,18 +189,18 @@
         
         const dirRes = window.imaginalOS.resolvePath(dirPathStr);
         if (dirRes.error) {
-            window.imaginalOS.writeOutput(`<span class='err'>mkdir: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`);
+            await writeTyped(`<span class='err'>mkdir: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
             return;
         }
         
         const sanitizedDir = dirname.replace(/[^a-zA-Z0-9_-]/g, '');
         if (!sanitizedDir || sanitizedDir !== dirname) {
-            window.imaginalOS.writeOutput("<span class='err'>mkdir: invalid directory name. Use only letters, numbers, dashes and underscores.</span><br>");
+            await writeTyped("<span class='err'>mkdir: invalid directory name. Use only letters, numbers, dashes and underscores.</span><br>", 2);
             return;
         }
         
         if (dirRes.node.children[sanitizedDir]) {
-            window.imaginalOS.writeOutput(`<span class='err'>mkdir: cannot create directory '${window.imaginalOS.escapeHtml(sanitizedDir)}': File exists</span><br>`);
+            await writeTyped(`<span class='err'>mkdir: cannot create directory '${window.imaginalOS.escapeHtml(sanitizedDir)}': File exists</span><br>`, 2);
             return;
         }
         
@@ -214,12 +210,12 @@
         };
         
         window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-        window.imaginalOS.writeOutput(`Created folder: <span class="dir">${window.imaginalOS.escapeHtml(sanitizedDir)}/</span><br>`);
+        await writeTyped(`Created folder: <span class="dir">${window.imaginalOS.escapeHtml(sanitizedDir)}/</span><br>`, 2);
     }
 
-    function runTouch(pathStr) {
+    async function runTouch(pathStr) {
         if (!pathStr) {
-            window.imaginalOS.writeOutput("<span class='err'>touch: missing file operand. BMO suggests touching grass instead? he-he.</span><br>");
+            await writeTyped("<span class='err'>touch: missing file operand. BMO suggests touching grass instead? he-he.</span><br>", 2);
             return;
         }
         
@@ -233,21 +229,22 @@
         
         const dirRes = window.imaginalOS.resolvePath(dirPathStr);
         if (dirRes.error) {
-            window.imaginalOS.writeOutput(`<span class='err'>touch: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`);
+            await writeTyped(`<span class='err'>touch: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
             return;
         }
         
         const sanitizedName = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
         if (!sanitizedName || sanitizedName !== filename) {
             window.imaginalOS.playBeepSound(300, 0.1, 'sine');
-            window.imaginalOS.writeOutput("<span class='err'>touch: invalid filename. Use only letters, numbers, dots, and underscores.</span><br>");
+            await writeTyped("<span class='err'>touch: invalid filename. Use only letters, numbers, dots, and underscores.</span><br>", 2);
             return;
         }
         
         const dirNode = dirRes.node;
         if (dirNode.children[sanitizedName]) {
-            window.imaginalOS.writeOutput(`Updated timestamp of ${window.imaginalOS.escapeHtml(sanitizedName)}<br>`);
-            window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO status:</span> Touched again. Stop tickling the file system! he-he.<br>`);
+            let out = `Updated timestamp of ${window.imaginalOS.escapeHtml(sanitizedName)}<br>` +
+                      `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> Touched again. Stop tickling the file system! he-he.<br>`;
+            await writeTyped(out, 2);
             return;
         }
         
@@ -263,13 +260,14 @@
             ? quotes[Math.floor(Math.random() * quotes.length)]
             : "Touched virtual file.";
             
-        window.imaginalOS.writeOutput(`Created empty file: <span class="file">${window.imaginalOS.escapeHtml(sanitizedName)}</span>. Type 'vim ${window.imaginalOS.escapeHtml(sanitizedName)}' to edit it.<br>`);
-        window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${quote}<br>`);
+        let out = `Created empty file: <span class="file">${window.imaginalOS.escapeHtml(sanitizedName)}</span>. Type 'vim ${window.imaginalOS.escapeHtml(sanitizedName)}' to edit it.<br>` +
+                  `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${quote}<br>`;
+        await writeTyped(out, 2);
     }
 
-    function runRm(pathStr) {
+    async function runRm(pathStr) {
         if (!pathStr) {
-            window.imaginalOS.writeOutput("<span class='err'>rm: missing operand. Did you want to delete BMO? You can't delete BMO, BMO has back-ups on the moon! he-he.</span><br>");
+            await writeTyped("<span class='err'>rm: missing operand. Did you want to delete BMO? You can't delete BMO, BMO has back-ups on the moon! he-he.</span><br>", 2);
             return;
         }
         
@@ -283,27 +281,27 @@
         
         const dirRes = window.imaginalOS.resolvePath(dirPathStr);
         if (dirRes.error) {
-            window.imaginalOS.writeOutput(`<span class='err'>rm: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`);
+            await writeTyped(`<span class='err'>rm: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
             return;
         }
         
         const dirNode = dirRes.node;
         const targetNode = dirNode.children[filename];
         if (!targetNode) {
-            window.imaginalOS.writeOutput(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': No such file or directory</span><br>`);
+            await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': No such file or directory</span><br>`, 2);
             return;
         }
 
         if (targetNode.readonly) {
             window.imaginalOS.playBeepSound(300, 0.15, 'sawtooth');
-            window.imaginalOS.writeOutput(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Permission denied! You cannot erase system core memories, human.</span><br>`);
+            await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Permission denied! You cannot erase system core memories, human.</span><br>`, 2);
             return;
         }
         
         if (targetNode.type === 'dir') {
             const childrenKeys = Object.keys(targetNode.children || {});
             if (childrenKeys.length > 0) {
-                window.imaginalOS.writeOutput(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Directory not empty</span><br>`);
+                await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Directory not empty</span><br>`, 2);
                 return;
             }
         }
@@ -316,8 +314,9 @@
             ? roasts[Math.floor(Math.random() * roasts.length)]
             : "Removed file/folder.";
             
-        window.imaginalOS.writeOutput(`Removed file/folder: ${window.imaginalOS.escapeHtml(filename)}<br>`);
-        window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${roast}<br>`);
+        let out = `Removed file/folder: ${window.imaginalOS.escapeHtml(filename)}<br>` +
+                  `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${roast}<br>`;
+        await writeTyped(out, 2);
     }
 
     function runHistory() {
@@ -419,7 +418,7 @@
         return `HUMAN-${osPart}-${gpu}-${num}`;
     }
 
-    function runWhoami() {
+    async function runWhoami() {
         const td = window.telemetryData;
         const bmoName = getBmoUid();
         
@@ -512,10 +511,10 @@
         } catch {}
         
         out += `<br><span style="color: #64ffda; font-weight: bold;">BMO Telemetry Analysis:</span><br>${bmoComment}<br>`;
-        window.imaginalOS.writeOutput(out);
+        await writeTyped(out, 4);
     }
 
-    function runNeofetch() {
+    async function runNeofetch() {
         const td = window.telemetryData;
         
         const logo = `<pre class="ascii-logo">
@@ -527,20 +526,20 @@
 ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
 </pre>`;
 
-        window.imaginalOS.writeOutput(`
-${logo}
----------------------------------------------
-<span class="neokey">OS:</span>          ImaginalOS v${window.imaginalOS.VERSION || '0.9.1'}-potato (Potato Battery Edition)
-<span class="neokey">Host:</span>        imaginal.dev
-<span class="neokey">Uptime:</span>      ${Math.round(performance.now() / 1000)} seconds
-<span class="neokey">Shell:</span>       bush v0.9-glitch
-<span class="neokey">Resolution:</span>  ${td.screenRes} (Viewport: ${td.viewportRes})
-<span class="neokey">CPU Cores:</span>   ${td.cores} cores
-<span class="neokey">RAM:</span>         ${td.memory}
-<span class="neokey">GPU:</span>         ${td.gpuRenderer.split('/').pop().replace('Direct3D11', '').trim()}
-<span class="neokey">Weather:</span>     ${td.weatherText} (${td.temperature})
----------------------------------------------
-`);
+        let out = `${logo}`;
+        out += `<span style="color: #50fa7b;">---------------------------------------------</span><br>`;
+        out += `<span class="neokey">OS:</span>          ImaginalOS v${window.imaginalOS.VERSION || '0.9.1'}-potato (Potato Battery Edition)<br>`;
+        out += `<span class="neokey">Host:</span>        imaginal.dev<br>`;
+        out += `<span class="neokey">Uptime:</span>      ${Math.round(performance.now() / 1000)} seconds<br>`;
+        out += `<span class="neokey">Shell:</span>       bush v0.9-glitch<br>`;
+        out += `<span class="neokey">Resolution:</span>  ${td.screenRes} (Viewport: ${td.viewportRes})<br>`;
+        out += `<span class="neokey">CPU Cores:</span>   ${td.cores} cores<br>`;
+        out += `<span class="neokey">RAM:</span>         ${td.memory}<br>`;
+        out += `<span class="neokey">GPU:</span>         ${td.gpuRenderer.split('/').pop().replace('Direct3D11', '').trim()}<br>`;
+        out += `<span class="neokey">Weather:</span>     ${td.weatherText} (${td.temperature})<br>`;
+        out += `<span style="color: #50fa7b;">---------------------------------------------</span><br>`;
+
+        await writeTyped(out, 2);
     }
 
     function runHarvester() {
@@ -606,7 +605,7 @@ ${logo}
         }, 400);
     }
 
-    function runWeather() {
+    async function runWeather() {
         const td = window.telemetryData;
         let emoji = '🌫️';
         let type = 'unknown';
@@ -674,7 +673,7 @@ ${logo}
         const phrase = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : "Foggy weather.";
         
         out += `<br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`;
-        window.imaginalOS.writeOutput(out);
+        await writeTyped(out, 2);
     }
 
     function runBmoEasterEgg() {
@@ -773,7 +772,7 @@ Keep crafting excellent software!
         }
     }
 
-    function runPass(lenStr = '12') {
+    async function runPass(lenStr = '12') {
         let len = parseInt(lenStr);
         if (isNaN(len) || len < 4 || len > 128) {
             len = 12;
@@ -789,8 +788,9 @@ Keep crafting excellent software!
             ? quotes[Math.floor(Math.random() * quotes.length)]
             : "Here is your password.";
             
-        window.imaginalOS.writeOutput(`🔑 <span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${quote}"<br>`);
-        window.imaginalOS.writeOutput(`Generated Password (${len} chars): <span class="secret">${window.imaginalOS.escapeHtml(pass)}</span><br>`);
+        let out = `🔑 <span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${quote}"<br>` +
+                  `Generated Password (${len} chars): <span class="secret">${window.imaginalOS.escapeHtml(pass)}</span><br>`;
+        await writeTyped(out, 2);
     }
 
     function runDestruct() {
@@ -1007,22 +1007,28 @@ Available commands:
         }
         return result;
     }
-    function runCookies() {
-        window.imaginalOS.writeOutput(window.imaginalOS.COOKIE_POLICY_TEXT);
+    async function runCookies() {
+        await writeTyped(window.imaginalOS.COOKIE_POLICY_TEXT, 3);
     }
 
     function runPolicy() {
         const laws = window.imaginalOS.GALACTIC_POLICIES;
         
-        let out = `⚖️ <b>ImaginalOS Terms of Service & Galactic Policies:</b><br>`;
-        out += `--------------------------------------------------<br>`;
+        let out = `⚖️ <span class="secret">[GALACTIC TOS & POLICIES]</span><br>`;
+        out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         for (let i = 0; i < laws.length; i++) {
-            out += `<span class="secret">[Rule ${i + 1}]</span> ${laws[i]}<br>`;
+            out += `<span class="neokey">[Rule ${i + 1}]</span> ${laws[i]}<br>`;
         }
         window.imaginalOS.writeOutput(out + `<br>`);
     }
 
+    let activeTypingInterrupt = null;
+
     function typeHtml(element, html, speed = 8, callback) {
+        if (activeTypingInterrupt) {
+            activeTypingInterrupt();
+        }
+
         element.innerHTML = html;
         
         const textNodes = [];
@@ -1043,9 +1049,43 @@ Available commands:
         
         let nodeIndex = 0;
         let charIndex = 0;
+        let skip = false;
+        
+        const handleInterrupt = () => {
+            skip = true;
+        };
+        
+        let listenersRegistered = false;
+        const registerTimeout = setTimeout(() => {
+            window.addEventListener('keydown', handleInterrupt);
+            window.addEventListener('click', handleInterrupt);
+            listenersRegistered = true;
+        }, 100);
+        
+        function cleanup() {
+            clearTimeout(registerTimeout);
+            if (listenersRegistered) {
+                window.removeEventListener('keydown', handleInterrupt);
+                window.removeEventListener('click', handleInterrupt);
+            }
+            activeTypingInterrupt = null;
+        }
+
+        activeTypingInterrupt = cleanup;
         
         function step() {
+            if (skip) {
+                for (let i = nodeIndex; i < textNodes.length; i++) {
+                    const nodeInfo = textNodes[i];
+                    nodeInfo.node.nodeValue = nodeInfo.originalText;
+                }
+                cleanup();
+                if (callback) callback();
+                return;
+            }
+
             if (nodeIndex >= textNodes.length) {
+                cleanup();
                 if (callback) callback();
                 return;
             }
@@ -1072,6 +1112,29 @@ Available commands:
         }
         
         step();
+    }
+
+    function writeTyped(html, speed = 4) {
+        return new Promise((resolve) => {
+            const termInput = document.querySelector('.terminal-hidden-input');
+            if (termInput) termInput.disabled = true;
+
+            const textContainer = document.createElement('span');
+            const processedHtml = window.imaginalOS.wrapEmoji ? window.imaginalOS.wrapEmoji(html) : html;
+            
+            if (window.imaginalOS.terminalOutput) {
+                window.imaginalOS.terminalOutput.appendChild(textContainer);
+            }
+
+            typeHtml(textContainer, processedHtml, speed, () => {
+                if (termInput) {
+                    termInput.disabled = false;
+                    termInput.focus();
+                }
+                if (window.imaginalOS.syncInputBuffer) window.imaginalOS.syncInputBuffer();
+                resolve();
+            });
+        });
     }
 
     function runIp() {
@@ -1154,7 +1217,7 @@ Available commands:
         }, 1800);
     }
 
-    function runPwd() {
+    async function runPwd() {
         const path = '/' + window.imaginalOS.currentPath.join('/');
         let comment = '';
         
@@ -1170,11 +1233,12 @@ Available commands:
             comment = `🗺️ A custom pocket dimension created by you. Pretty cozy!`;
         }
         
-        window.imaginalOS.writeOutput(`Current location: <span class="file">${window.imaginalOS.escapeHtml(path)}</span><br>`);
-        window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${comment}<br>`);
+        const out = `Current location: <span class="file">${window.imaginalOS.escapeHtml(path)}</span><br>` +
+                    `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${comment}<br>`;
+        await writeTyped(out, 2);
     }
 
-    function runUname(arg = '') {
+    async function runUname(arg = '') {
         const flag = arg ? arg.toLowerCase() : '';
         const version = (window.imaginalOS.VERSION || '0.9.1') + '-potato';
         let out = '';
@@ -1195,10 +1259,10 @@ Available commands:
         } else {
             out = `ImaginalOS ${version} #1 SMP Sat Dec 24 12:34:34 UTC 2022 x86_64 GNU/Bimux (BMO-Core-v4.2, Battery Power: 100%, Crumbs: 2%)<br>`;
         }
-        window.imaginalOS.writeOutput(out);
+        await writeTyped(out, 4);
     }
 
-    function runTime() {
+    async function runTime() {
         const now = new Date();
         const hour = now.getHours();
         const minute = now.getMinutes();
@@ -1210,10 +1274,10 @@ Available commands:
         }
         
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        window.imaginalOS.writeOutput(`🕰️ <b>[Local Time: ${timeStr}]</b><br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`);
+        await writeTyped(`🕰️ <b>[Local Time: ${timeStr}]</b><br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`, 2);
     }
 
-    function runTips() {
+    async function runTips() {
         const tips = window.imaginalOS.TIPS_LIST;
         if (!tips || tips.length === 0) {
             window.imaginalOS.writeOutput("<span class='err'>No tips found in database.</span><br>");
@@ -1222,13 +1286,13 @@ Available commands:
         const randomIndex = Math.floor(Math.random() * tips.length);
         const tip = tips[randomIndex];
         
-        let out = `💡 <b>[HARMFUL ADVICE #${randomIndex + 1}] ${window.imaginalOS.escapeHtml(tip.title)}</b><br>`;
-        out += `--------------------------------------------------<br>`;
+        let out = `💡 <span class="secret">[HARMFUL ADVICE #${randomIndex + 1}: ${window.imaginalOS.escapeHtml(tip.title)}]</span><br>`;
+        out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         tip.steps.forEach((step, idx) => {
             out += `${idx + 1}. ${window.imaginalOS.escapeHtml(step)}<br>`;
         });
-        out += `<br><b>Result:</b> <span class="secret">${window.imaginalOS.escapeHtml(tip.result)}</span><br>`;
-        window.imaginalOS.writeOutput(out);
+        out += `<br><b>Result:</b> <span class="neokey">${window.imaginalOS.escapeHtml(tip.result)}</span><br>`;
+        await writeTyped(out, 2);
     }
 
     function ansiToHtml(text) {
@@ -1369,9 +1433,9 @@ Available commands:
                 if (text.trim().startsWith('<!DOCTYPE html>') && (targetPath === '/' || targetPath === '')) {
                     const version = window.imaginalOS.VERSION || '0.9.1';
                     const localAnsi = curlResponses.homepage.replace(/\${version}/g, version);
-                    window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(localAnsi)}</pre>`);
+                    await writeTyped(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(localAnsi)}</pre>`, 2);
                 } else {
-                    window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(text)}</pre>`);
+                    await writeTyped(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(text)}</pre>`, 2);
                 }
             } else {
                 if (cleanUrl.includes('wttr.in')) {
@@ -1408,6 +1472,7 @@ Available commands:
     window.imaginalOS.runOpen = runOpen;
     window.imaginalOS.runIp = runIp;
     window.imaginalOS.runWhoami = runWhoami;
+    window.imaginalOS.writeTyped = writeTyped;
     window.imaginalOS.runNeofetch = runNeofetch;
     window.imaginalOS.runHarvester = runHarvester;
     window.imaginalOS.runWeather = runWeather;

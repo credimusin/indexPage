@@ -302,16 +302,16 @@
     };
 
     const COOKIE_POLICY_TEXT = 
-        `🍪 <b>ImaginalOS Cookie Policy Directive:</b><br>` +
-        `--------------------------------------------------<br>` +
+        `🍪 <span class="secret">[COOKIE DIRECTIVE]</span><br>` +
+        `<span style="color: #50fa7b;">--------------------------------------------------</span><br>` +
         `Just like 99.9% of the websites in this sector of the galaxy, we collect cookies.<br><br>` +
         `We do this because:<br>` +
-        `1. We absolutely LOVE cookies (especially chocolate chip, oatmeal raisin, and double chocolate).<br>` +
-        `2. Cookies go extremely well with warm milk, English tea, or fresh coffee.<br>` +
-        `3. Our resident console system, BMO, gets hungry when processing telemetry inputs.<br>` +
+        `• <span class="neokey">Reason 1:</span> We absolutely LOVE cookies (especially chocolate chip, oatmeal raisin, and double chocolate).<br>` +
+        `• <span class="neokey">Reason 2:</span> Cookies go extremely well with warm milk, English tea, or fresh coffee.<br>` +
+        `• <span class="neokey">Reason 3:</span> Our resident console system, BMO, gets hungry when processing telemetry inputs.<br>` +
         `<br>` +
         `By continuing to navigate this interface, you agree to virtually bake a batch of cookies<br>` +
-        `for BMO. Cookie preferences can be managed using the 'sudo rm -rf /' reset mechanism.<br>`;
+        `for BMO. Cookie preferences can be managed using the '<span class="cmd">sudo rm -rf /</span>' reset mechanism.<br>`;
 
     const GALACTIC_POLICIES = [
         "Staring directly at the moon for more than 5 minutes requires declaring your eternal loyalty to BMO.",

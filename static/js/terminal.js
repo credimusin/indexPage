@@ -418,13 +418,13 @@
                 await window.imaginalOS.runCat(args[0], true);
                 break;
             case 'pwd':
-                window.imaginalOS.runPwd();
+                await window.imaginalOS.runPwd();
                 break;
             case 'uname':
-                window.imaginalOS.runUname(args[0]);
+                await window.imaginalOS.runUname(args[0]);
                 break;
             case 'tips':
-                window.imaginalOS.runTips();
+                await window.imaginalOS.runTips();
                 break;
             case 'history':
                 window.imaginalOS.runHistory();
@@ -433,13 +433,13 @@
                 window.imaginalOS.animateEchoBanner(args.join(' '));
                 break;
             case 'mkdir':
-                window.imaginalOS.runMkdir(args[0]);
+                await window.imaginalOS.runMkdir(args[0]);
                 break;
             case 'touch':
-                window.imaginalOS.runTouch(args[0]);
+                await window.imaginalOS.runTouch(args[0]);
                 break;
             case 'rm':
-                window.imaginalOS.runRm(args[0]);
+                await window.imaginalOS.runRm(args[0]);
                 break;
             case 'nano':
                 playBeepSound(300, 0.1, 'sine');
@@ -454,13 +454,13 @@
                 triggerDegaussClear();
                 break;
             case 'time':
-                window.imaginalOS.runTime();
+                await window.imaginalOS.runTime();
                 break;
             case 'whoami':
-                window.imaginalOS.runWhoami();
+                await window.imaginalOS.runWhoami();
                 break;
             case 'neofetch':
-                window.imaginalOS.runNeofetch();
+                await window.imaginalOS.runNeofetch();
                 break;
             case 'harvester':
             case 'scan':
@@ -475,7 +475,7 @@
                         writeOutput(`<span class="err">Invalid weather type. Choose from: clear, clouds, rain, snow, storm.</span><br>`);
                     }
                 } else {
-                    window.imaginalOS.runWeather();
+                    await window.imaginalOS.runWeather();
                 }
                 break;
             case 'open':
@@ -485,7 +485,7 @@
                 window.imaginalOS.runIp();
                 break;
             case 'pass':
-                window.imaginalOS.runPass(args[0]);
+                await window.imaginalOS.runPass(args[0]);
                 break;
             case 'mute':
                 window.audioSynthMuted = true;
@@ -497,7 +497,7 @@
                 break;
             case 'cookies':
             case 'cookie':
-                window.imaginalOS.runCookies();
+                await window.imaginalOS.runCookies();
                 break;
             case 'policy':
             case 'policies':
@@ -529,12 +529,12 @@
                 break;
             case 'git':
             case 'github':
-                writeOutput("Redirecting to GitHub: https://github.com/credimusin ...<br>");
+                await window.imaginalOS.writeTyped(`🐱 <span class="secret">[GITHUB REDIRECT]</span><br>Bypassing firewalls to reach creator profile: <span class="cmd">https://github.com/credimusin</span><br>`, 5);
                 window.open('https://github.com/credimusin', '_blank');
                 break;
             case 'tg':
             case 'telegram':
-                writeOutput("Redirecting to Telegram: https://t.me/credimusin ...<br>");
+                await window.imaginalOS.writeTyped(`✈️ <span class="secret">[TELEGRAM REDIRECT]</span><br>Establishing secure link to chat frequency: <span class="cmd">https://t.me/credimusin</span><br>`, 5);
                 window.open('https://t.me/credimusin', '_blank');
                 break;
             case 'bmo':
@@ -550,7 +550,7 @@
                     window.imaginalOS.shellState = 'sudo_password';
                     sudoAttempts = 0;
                     terminalPromptSymbol.innerHTML = getPromptString();
-                    writeOutput("System authentication requested. (Try password: bmo)<br>");
+                    await window.imaginalOS.writeTyped(`🔐 <span class="secret">[SUPERUSER SECURITY CHECK]</span><br>System authentication requested. (Secret password hint: <span class="file">bmo</span>)<br>`, 6);
                 }
                 break;
             case 'exit':
@@ -748,6 +748,7 @@ Administrator: BMO
     window.imaginalOS.writeOutput = writeOutput;
     window.imaginalOS.escapeHtml = escapeHtml;
     window.imaginalOS.getPromptString = getPromptString;
+    window.imaginalOS.wrapEmoji = wrapEmoji;
     window.toggleTerminal = toggleTerminal;
     window.openTerminal = openTerminal;
     window.closeTerminal = closeTerminal;
