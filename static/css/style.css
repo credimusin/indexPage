@@ -835,3 +835,33 @@ div.main {
     display: block;
 }
 
+/* Ambient Error Page Styles */
+.ambient-error-code {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #ff5555;
+    font-family: monospace;
+    font-size: clamp(6rem, 20vw, 15rem);
+    font-weight: bold;
+    text-shadow: 0 0 35px rgba(255, 85, 85, 0.45);
+    z-index: 2;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.85;
+    letter-spacing: 6px;
+}
+
+.floating-error-particle {
+    position: absolute;
+    color: rgba(255, 85, 85, 0.15);
+    font-family: monospace;
+    font-weight: bold;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+    white-space: nowrap;
+}
+

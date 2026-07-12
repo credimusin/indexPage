@@ -8,6 +8,7 @@
         { name: "cd [dir]", desc: "Change working directory." },
         { name: "clear", desc: "Clear console window buffers." },
         { name: "cookie", desc: "View BMO's statement on cookies." },
+        { name: "curl &lt;url&gt;", desc: "Transfer data from or to a server." },
         { name: "date", desc: "Print current timestamp." },
         { name: "exit", desc: "Close console terminal." },
         { name: "git", desc: "Navigate directly to GitHub profile." },
@@ -87,6 +88,11 @@
             desc: "Change working directory.",
             linux: "Changes the current working directory of the shell session to the target path.",
             project: "Navigates between folders. Supports absolute and relative paths, including '..' (parent directory). Running 'cd' without arguments returns to '/home/bmo'."
+        },
+        curl: {
+            desc: "Transfer data from or to a server.",
+            linux: "curl is a tool to transfer data from or to a server, using one of the supported protocols (HTTP, HTTPS, FTP, etc.).",
+            project: "Runs a virtual curl request to fetch details from servers. Try 'curl https://imaginal.dev' to get BMO's ANSI art response, 'curl wttr.in' for a weather summary, or 'curl /coffee' for a warm surprise. Supports -I (headers-only) and -v (verbose mode)."
         },
         pwd: {
             desc: "Print working directory.",
@@ -786,6 +792,13 @@
         }
     ];
 
+    const CURL_HELP = `Usage: curl [options...] &lt;url&gt;<br>
+Options:<br>
+  -I, --head          Show document info only (headers)<br>
+  -v, --verbose       Make the operation more talkative<br>
+  -H, --header LINE   Extra header to include in the request<br>
+  -h, --help          This help text<br>`;
+
     // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.HELP_COMMANDS = HELP_COMMANDS;
@@ -801,4 +814,5 @@
     window.imaginalOS.RM_ROASTS = RM_ROASTS;
     window.imaginalOS.WEATHER_QUOTES = WEATHER_QUOTES;
     window.imaginalOS.TIPS_LIST = TIPS_LIST;
+    window.imaginalOS.CURL_HELP = CURL_HELP;
 })();

@@ -408,6 +408,9 @@
             case 'cd':
                 window.imaginalOS.runCd(args[0]);
                 break;
+            case 'curl':
+                await window.imaginalOS.runCurl(args);
+                break;
             case 'cat':
                 await window.imaginalOS.runCat(args[0], false);
                 break;

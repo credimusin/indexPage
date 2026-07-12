@@ -2,6 +2,16 @@
  * imaginalOS - Core Application Orchestrator
  */
 (function() {
+    window.imaginalOS = window.imaginalOS || {};
+    fetch('/package.json')
+        .then(res => res.json())
+        .then(pkg => {
+            window.imaginalOS.VERSION = pkg.version;
+        })
+        .catch(() => {
+            window.imaginalOS.VERSION = '0.9.1';
+        });
+
     function updateFavicon() {
         let emoji = '💻';
         const ref = document.referrer.toLowerCase();
@@ -50,15 +60,14 @@
         if (loadingTerminal) return false;
         loadingTerminal = true;
 
-        const version = window.imaginalOS.VERSION || '0.9.1';
         const scripts = [
-            `static/js/sound.js?v=${version}`,
-            `static/js/commands_data.js?v=${version}`,
-            `static/js/vfs.js?v=${version}`,
-            `static/js/vim.js?v=${version}`,
-            `static/js/spacerock.js?v=${version}`,
-            `static/js/commands.js?v=${version}`,
-            `static/js/terminal.js?v=${version}`
+            '/static/js/sound.js',
+            '/static/js/commands_data.js',
+            '/static/js/vfs.js',
+            '/static/js/vim.js',
+            '/static/js/spacerock.js',
+            '/static/js/commands.js',
+            '/static/js/terminal.js'
         ];
 
         try {
@@ -94,6 +103,53 @@
         }
     });
 
+    function showAmbientError(code = '404') {
+        document.title = `${code}: Lost in Space`;
+
+        const codeDisplay = document.createElement('div');
+        codeDisplay.className = 'ambient-error-code';
+        codeDisplay.innerText = code;
+        document.body.appendChild(codeDisplay);
+
+        const particleCount = 15;
+        const particles = [];
+        for (let i = 0; i < particleCount; i++) {
+            const el = document.createElement('div');
+            el.className = 'floating-error-particle';
+            el.innerText = code;
+            const scale = 0.6 + Math.random() * 1.4;
+            const opacity = 0.05 + Math.random() * 0.18;
+            el.style.fontSize = `${scale}rem`;
+            el.style.color = `rgba(255, 85, 85, ${opacity})`;
+            document.body.appendChild(el);
+            particles.push({
+                el,
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: (Math.random() - 0.5) * 1.2
+            });
+        }
+
+        function animate() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < -60) p.x = w + 60;
+                if (p.x > w + 60) p.x = -60;
+                if (p.y < -60) p.y = h + 60;
+                if (p.y > h + 60) p.y = -60;
+                p.el.style.left = `${p.x}px`;
+                p.el.style.top = `${p.y}px`;
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
         // Initialize subsystems sequentially
         if (window.imaginalOS && window.imaginalOS.initTooltip) {
@@ -113,5 +169,22 @@
         console.log("%c=== ImaginalOS Console ===", "color: #27ae60; font-weight: bold; font-size: 14px;");
         console.log("%cLost something?\nThe environment is reacting to your presence.", "color: #7f8c8d;");
         console.log("%cPress the backtick key (`) to open the control terminal.", "color: #e67e22; font-style: italic;");
+
+        const path = window.location.pathname;
+        let errorCode = '';
+        const pathMatch = path.match(/\b(404|418|500|502|503|504)\b/);
+        const queryMatch = window.location.search.match(/\b(404|418|500|502|503|504)\b/);
+
+        if (pathMatch) {
+            errorCode = pathMatch[1];
+        } else if (queryMatch) {
+            errorCode = queryMatch[1];
+        } else if (path !== '/' && path !== '/index.html' && !path.startsWith('/static/') && !path.startsWith('/functions/') && path !== '/package.json') {
+            errorCode = '404';
+        }
+
+        if (errorCode) {
+            showAmbientError(errorCode);
+        }
     });
 })();

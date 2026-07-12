@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA Routing Rewrite Rule
+# Serves index.html for all non-existent paths so client-side JS can render the 404 state.
+/* /index.html 200

@@ -352,7 +352,7 @@
             } else {
                 const parts = item.cmd.trim().split(' ');
                 const cmdName = parts[0].toLowerCase();
-                const validCommands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips'];
+                const validCommands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'curl'];
                 
                 let comment = '';
                 if (cmdName && !validCommands.includes(cmdName)) {
@@ -1231,11 +1231,173 @@ Available commands:
         window.imaginalOS.writeOutput(out);
     }
 
+    function ansiToHtml(text) {
+        let escaped = window.imaginalOS.escapeHtml(text);
+        escaped = escaped.replaceAll('\x1b[36m', '<span style="color: #8be9fd;">');
+        escaped = escaped.replaceAll('\x1b[32m', '<span style="color: #50fa7b;">');
+        escaped = escaped.replaceAll('\x1b[33m', '<span style="color: #f1fa8c;">');
+        escaped = escaped.replaceAll('\x1b[1m', '<b>');
+        escaped = escaped.replaceAll('\x1b[0m', '</span></b>');
+        return escaped;
+    }
+
+    async function runCurl(args = []) {
+        if (args.length === 0) {
+            window.imaginalOS.writeOutput(`curl: try 'curl --help' for more information<br>`);
+            return;
+        }
+
+        let isHead = false;
+        let isVerbose = false;
+        let url = '';
+        let headers = [];
+
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i];
+            if (arg === '-I' || arg === '--head') {
+                isHead = true;
+            } else if (arg === '-v' || arg === '--verbose') {
+                isVerbose = true;
+            } else if (arg === '-H' || arg === '--header') {
+                if (i + 1 < args.length) {
+                    headers.push(args[i + 1]);
+                    i++;
+                }
+            } else if (arg === '-h' || arg === '--help') {
+                window.imaginalOS.writeOutput(window.imaginalOS.CURL_HELP);
+                return;
+            } else if (!arg.startsWith('-')) {
+                url = arg;
+            }
+        }
+
+        if (!url) {
+            window.imaginalOS.writeOutput(`<span class="err">curl: no URL specified!</span><br>`);
+            return;
+        }
+
+        let cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '').toLowerCase();
+        let targetPath = '';
+        let isLocal = false;
+
+        const isLocalHost = cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1');
+        const isImaginal = cleanUrl.includes('imaginal.dev') || cleanUrl.startsWith('/') || isLocalHost;
+
+        if (isImaginal || cleanUrl === '') {
+            isLocal = true;
+            let pathMatch = url.match(/^(https?:\/\/[^/]+)?(\/.*)?$/);
+            targetPath = (pathMatch && pathMatch[2]) ? pathMatch[2] : '/';
+        }
+
+        if (isVerbose) {
+            window.imaginalOS.writeOutput(`*   Trying ${isLocal ? '127.0.0.1' : 'external'}...<br>`);
+            window.imaginalOS.writeOutput(`* Connected to ${window.imaginalOS.escapeHtml(url.split('/')[0])} port 443<br>`);
+            window.imaginalOS.writeOutput(`* SSL connection using TLSv1.3<br>`);
+            window.imaginalOS.writeOutput(`&gt; GET ${window.imaginalOS.escapeHtml(targetPath || url)} HTTP/2<br>`);
+            window.imaginalOS.writeOutput(`&gt; User-Agent: curl/8.5.0<br>`);
+            headers.forEach(h => {
+                window.imaginalOS.writeOutput(`&gt; ${window.imaginalOS.escapeHtml(h)}<br>`);
+            });
+            window.imaginalOS.writeOutput(`&gt; <br>`);
+        }
+
+        try {
+            if (isLocal) {
+                const fetchHeaders = {
+                    'X-Imaginal-Curl': 'true'
+                };
+                headers.forEach(h => {
+                    const parts = h.split(':');
+                    if (parts.length >= 2) {
+                        fetchHeaders[parts[0].trim()] = parts.slice(1).join(':').trim();
+                    }
+                });
+
+                const response = await fetch(targetPath, {
+                    method: isHead ? 'HEAD' : 'GET',
+                    headers: fetchHeaders
+                });
+
+                const dateStr = new Date().toUTCString();
+                const defaultHeaders = [
+                    `date: ${dateStr}`,
+                    `content-type: ${response.headers.get('content-type') || 'text/plain; charset=utf-8'}`,
+                    `x-developer: BMO`,
+                    `x-bmo-system: imaginalOS-v${window.imaginalOS.VERSION || '0.9.1'}`,
+                    `x-clacks-overhead: GNU Terry Pratchett`,
+                    `server: cloudflare`
+                ];
+
+                if (isHead) {
+                    let headerOutput = `HTTP/2 ${response.status}<br>`;
+                    defaultHeaders.forEach(h => {
+                        headerOutput += (isVerbose ? `&lt; ` : '') + window.imaginalOS.escapeHtml(h) + '<br>';
+                    });
+                    window.imaginalOS.writeOutput(headerOutput);
+                    return;
+                }
+
+                if (isVerbose) {
+                    window.imaginalOS.writeOutput(`&lt; HTTP/2 ${response.status}<br>`);
+                    defaultHeaders.forEach(h => {
+                        window.imaginalOS.writeOutput(`&lt; ${window.imaginalOS.escapeHtml(h)}<br>`);
+                    });
+                }
+
+                const text = await response.text();
+
+                let curlResponses = { coffee: "", tea: "", homepage: "" };
+                try {
+                    const curlRes = await fetch('/static/js/curl_responses.json');
+                    if (curlRes.ok) {
+                        curlResponses = await curlRes.json();
+                    }
+                } catch {}
+
+                // Local fallback for /coffee, /teapot, /tea when functions/_middleware.js is not active locally
+                if (response.status === 404) {
+                    if (targetPath.includes('coffee') || targetPath.includes('teapot')) {
+                        window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.4;">${window.imaginalOS.escapeHtml(curlResponses.coffee)}</pre>`);
+                        return;
+                    }
+                    if (targetPath.includes('tea')) {
+                        window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.4;">${window.imaginalOS.escapeHtml(curlResponses.tea)}</pre>`);
+                        return;
+                    }
+                }
+
+                if (text.trim().startsWith('<!DOCTYPE html>') && (targetPath === '/' || targetPath === '')) {
+                    const version = window.imaginalOS.VERSION || '0.9.1';
+                    const localAnsi = curlResponses.homepage.replace(/\${version}/g, version);
+                    window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(localAnsi)}</pre>`);
+                } else {
+                    window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(text)}</pre>`);
+                }
+            } else {
+                if (cleanUrl.includes('wttr.in')) {
+                    if (isHead) {
+                        window.imaginalOS.writeOutput(`HTTP/2 200<br>content-type: text/html; charset=utf-8<br>server: wttr.in<br>`);
+                        return;
+                    }
+                    if (isVerbose) {
+                        window.imaginalOS.writeOutput(`&lt; HTTP/2 200<br>&lt; content-type: text/html; charset=utf-8<br>`);
+                    }
+                    runWeather();
+                } else {
+                    window.imaginalOS.writeOutput(`<span class="err">curl: CORS restriction prevents fetching external URL ${window.imaginalOS.escapeHtml(url)} directly.</span><br>`);
+                }
+            }
+        } catch {
+            window.imaginalOS.writeOutput(`<span class="err">curl: Connection failed</span><br>`);
+        }
+    }
+
     // Expose on namespace
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.HINTS = HINTS;
     window.imaginalOS.runLs = runLs;
     window.imaginalOS.runCd = runCd;
+    window.imaginalOS.runCurl = runCurl;
     window.imaginalOS.runCat = runCat;
     window.imaginalOS.runPwd = runPwd;
     window.imaginalOS.runUname = runUname;
