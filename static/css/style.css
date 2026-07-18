@@ -865,3 +865,35 @@ div.main {
     white-space: nowrap;
 }
 
+/* Terminal Button Styles */
+.term-btn {
+    background: rgba(0, 255, 128, 0.12);
+    border: 1px solid #00ff80;
+    color: #00ff80 !important;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 8px 0;
+    text-shadow: 0 0 2px rgba(0, 255, 128, 0.3);
+    box-shadow: 0 0 8px rgba(0, 255, 128, 0.1);
+}
+
+.term-btn:hover {
+    background: rgba(0, 255, 128, 0.22);
+    box-shadow: 0 0 12px rgba(0, 255, 128, 0.3);
+    text-shadow: 0 0 4px rgba(0, 255, 128, 0.5);
+    border-color: #64ffda;
+    color: #64ffda !important;
+}
+
+.term-btn:active {
+    transform: scale(0.97);
+}
+
+

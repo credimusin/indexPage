@@ -540,6 +540,9 @@
             case 'bmo':
                 window.imaginalOS.runBmoEasterEgg();
                 break;
+            case 'gpg':
+                await window.imaginalOS.runGpg();
+                break;
             case 'secret':
                 window.imaginalOS.runSecretCheck(args);
                 break;
@@ -629,7 +632,7 @@
         
         if (parts.length === 1) {
             const cmd = parts[0].toLowerCase();
-            const commands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'nano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'spacerock', 'spacerocks', 'asteroids', 'game'];
+            const commands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'nano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'spacerock', 'spacerocks', 'asteroids', 'game', 'gpg'];
             const matches = commands.filter(c => c.startsWith(cmd));
             if (matches.length === 1) {
                 terminalInput.value = matches[0] + ' ';

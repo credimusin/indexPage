@@ -12,6 +12,7 @@
         { name: "date", desc: "Print current timestamp." },
         { name: "exit", desc: "Close console terminal." },
         { name: "git", desc: "Navigate directly to GitHub profile." },
+        { name: "gpg", desc: "Display owner's GPG public key." },
         { name: "harvester", desc: "Run the digital footprint telemetry report." },
         { name: "history", desc: "Display session command history list." },
         { name: "ip", desc: "Show client's public IP address." },
@@ -36,6 +37,7 @@
 
     const HINTS = [
         "Type 'git' to open BMO's GitHub profile.",
+        "Type 'gpg' to see the creator's PGP public key.",
         "Type 'tg' to send BMO a message on Telegram.",
         "Type 'neofetch' to output system specifications.",
         "Type 'harvester' to see telemetry diagnostics.",
@@ -168,6 +170,11 @@
             desc: "Git control system redirect.",
             linux: "Command-line interface to the Git version control system.",
             project: "Triggers a browser redirect to BMO's personal GitHub profile."
+        },
+        gpg: {
+            desc: "Display owner's GPG public key.",
+            linux: "GNU Privacy Guard (GPG) is an implementation of the OpenPGP standard to encrypt and sign data/communication.",
+            project: "Prints the owner's public GPG/PGP key block directly to the screen (marked for click-to-copy convenience)."
         },
         github: {
             desc: "Alias for 'git'.",

@@ -130,6 +130,11 @@
                                         'readonly': true,
                                         'contentPath': 'static/vfs/secrets/passwords.db'
                                     },
+                                    'public.key': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'contentPath': 'static/vfs/secrets/public.key'
+                                    },
                                     'soul.bin': {
                                         'type': 'file',
                                         'readonly': true,

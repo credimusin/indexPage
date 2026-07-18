@@ -319,6 +319,37 @@
         await writeTyped(out, 2);
     }
 
+    async function runGpg() {
+        const keyPath = 'secrets/public.key';
+        const res = window.imaginalOS.resolvePath(keyPath);
+        if (res.error) {
+            window.imaginalOS.playBeepSound(300, 0.1, 'sine');
+            window.imaginalOS.writeOutput(`<span class="err">gpg: ${res.error}: ${keyPath}</span><br>`);
+            return;
+        }
+
+        if (res.node.contentPath && (res.node.readonly || res.node.content === undefined)) {
+            try {
+                const response = await fetch(res.node.contentPath);
+                if (response.ok) {
+                    res.node.content = await response.text();
+                    window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
+                } else {
+                    if (res.node.content === undefined) res.node.content = `[Error: Failed to load ${res.node.contentPath}]`;
+                }
+            } catch {
+                if (res.node.content === undefined) res.node.content = `[Error: Network error loading ${res.node.contentPath}]`;
+            }
+        }
+
+        const content = res.node.content || '';
+        const header = `🔑 <span class="secret">[GPG PUBLIC KEY BLOCK]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
+        const formatted = `<pre style="font-family: monospace; line-height: 1.25; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.15); color: #a6e22e; text-shadow: 0 0 1px rgba(166,226,46,0.2);">${window.imaginalOS.escapeHtml(content)}</pre>`;
+        const downloadBtn = `<a href="data:application/pgp-keys;charset=utf-8,${encodeURIComponent(content)}" download="public.key" class="term-btn">💾 Download BMO public.key</a><br>`;
+        
+        window.imaginalOS.writeOutput(header + formatted + downloadBtn + '<br>');
+    }
+
     function runHistory() {
         let output = '';
         const history = window.imaginalOS.commandHistory || [];
@@ -351,7 +382,7 @@
             } else {
                 const parts = item.cmd.trim().split(' ');
                 const cmdName = parts[0].toLowerCase();
-                const validCommands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'curl'];
+                const validCommands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'curl', 'gpg'];
                 
                 let comment = '';
                 if (cmdName && !validCommands.includes(cmdName)) {
@@ -838,7 +869,7 @@ It provides directory traversal, VFS writes, real-time environment overrides, an
 
 Use '<span class="cmd">man &lt;command&gt;</span>' to view manual entries for specific commands.
 Available commands:
-  bmo, cat, cd, clear, cookie, date, echo, exit, git,
+  bmo, cat, cd, clear, cookie, date, echo, exit, git, gpg,
   harvester, history, ip, ls, man, matrix, mkdir, mute,
   open, pass, policy, pwd, rm, secret, touch, uname,
   unmute, vim, weather, whoami
@@ -1461,6 +1492,7 @@ Available commands:
     window.imaginalOS.HINTS = HINTS;
     window.imaginalOS.runLs = runLs;
     window.imaginalOS.runCd = runCd;
+    window.imaginalOS.runGpg = runGpg;
     window.imaginalOS.runCurl = runCurl;
     window.imaginalOS.runCat = runCat;
     window.imaginalOS.runPwd = runPwd;
