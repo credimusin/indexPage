@@ -42,7 +42,7 @@
             } else {
                 if (child.readonly) {
                     perms = '-r--r--r--';
-                    tag = ' <span class="secret" style="font-size: 11px;">[protected]</span>';
+                    tag = ' <span class="secret-title" style="font-size: 11px;">[protected]</span>';
                 }
                 if (child.content) {
                     size = child.content.startsWith('IMAGE:') ? '58402' : child.content.length.toString();
@@ -53,7 +53,7 @@
             if (child.type === 'dir') {
                 fileSpan = `<span class="dir">${window.imaginalOS.escapeHtml(key)}/</span>`;
             } else if (child.type === 'file' && key.endsWith('.db')) {
-                fileSpan = `<span class="secret">${window.imaginalOS.escapeHtml(key)}</span>`;
+                fileSpan = `<span class="secret-title">${window.imaginalOS.escapeHtml(key)}</span>`;
             } else {
                 fileSpan = `<span class="file">${window.imaginalOS.escapeHtml(key)}</span>`;
             }
@@ -145,9 +145,9 @@
         } else {
             let header = '';
             if (batMode) {
-                header = ` 🦇 <span class="secret">[BAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
+                header = ` 🦇 <span class="secret-title">[BAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
             } else {
-                header = `🐱 <span class="secret">[CAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
+                header = `🐱 <span class="secret-title">[CAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
             }
             
             const isLinkAllowed = (filename === 'contact.txt' || (res.path && res.path.includes('projects')));
@@ -162,9 +162,9 @@
                 }
                 
                 if (escaped.includes('(BMO:')) {
-                    return escaped.replace(/(\(BMO:[^)]*\))/g, '<span class="secret" style="color: #ff79c6; font-weight: bold;">$1</span>');
+                    return escaped.replace(/(\(BMO:[^)]*\))/g, '<span class="secret-title" style="color: #ff79c6; font-weight: bold;">$1</span>');
                 } else if (escaped.includes('(BMO&#039;s')) {
-                    return escaped.replace(/(\(BMO&#039;s[^)]*\))/g, '<span class="secret" style="color: #ff79c6; font-weight: bold;">$1</span>');
+                    return escaped.replace(/(\(BMO&#039;s[^)]*\))/g, '<span class="secret-title" style="color: #ff79c6; font-weight: bold;">$1</span>');
                 }
                 return escaped;
             }).join('<br>');
@@ -343,8 +343,8 @@
         }
 
         const content = res.node.content || '';
-        const header = `🔑 <span class="secret">[GPG PUBLIC KEY BLOCK]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
-        const formatted = `<pre style="font-family: monospace; line-height: 1.25; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.15); color: #a6e22e; text-shadow: 0 0 1px rgba(166,226,46,0.2);">${window.imaginalOS.escapeHtml(content)}</pre>`;
+        const header = `🔑 <span class="secret-title">[GPG PUBLIC KEY BLOCK]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
+        const formatted = `<pre style="font-family: monospace; line-height: 1.25; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.15); color: #a6e22e; text-shadow: 0 0 1px rgba(166,226,46,0.2);" data-copy="${window.imaginalOS.escapeHtml(content)}">${window.imaginalOS.escapeHtml(content)}</pre>`;
         const downloadBtn = `<a href="data:application/pgp-keys;charset=utf-8,${encodeURIComponent(content)}" download="public.key" class="term-btn">💾 Download BMO public.key</a><br>`;
         
         window.imaginalOS.writeOutput(header + formatted + downloadBtn + '<br>');
@@ -378,7 +378,7 @@
         for (let i = 0; i < displayHistory.length; i++) {
             const item = displayHistory[i];
             if (item.type === 'bmo') {
-                output += `  ${i + 1}  <span class="secret" style="color: #ff79c6; font-style: italic; opacity: 0.85;">[BMO] ${window.imaginalOS.escapeHtml(item.cmd)}</span><br>`;
+                output += `  ${i + 1}  <span class="secret-title" style="color: #ff79c6; font-style: italic; opacity: 0.85;">[BMO] ${window.imaginalOS.escapeHtml(item.cmd)}</span><br>`;
             } else {
                 const parts = item.cmd.trim().split(' ');
                 const cmdName = parts[0].toLowerCase();
@@ -454,7 +454,7 @@
         const bmoName = getBmoUid();
         
         let out = '';
-        out += `Username:     <span class="secret">${bmoName}</span> (Visitor / Biological Unit)<br>`;
+        out += `Username:     <span class="secret-title">${bmoName}</span> (Visitor / Biological Unit)<br>`;
         out += `Client IP:    ${td.ip}<br>`;
         out += `Coordinates:  ${td.lat}, ${td.lon} (${td.city}, ${td.country})<br>`;
         out += `User Agent:   ${navigator.userAgent}<br>`;
@@ -497,12 +497,12 @@
         if (cacheClearedAlert && visits.length > 0) {
             // Пользователь очистил LocalStorage, но куки остались! Токсичим!
             bmoComment = `Wait a minute... 🧐 Your local storage was wiped clean!<br>` +
-                         `Trying to escape BMO's memory? Nice try, <span class="secret">${bmoName}</span>.<br>` +
+                         `Trying to escape BMO's memory? Nice try, <span class="secret-title">${bmoName}</span>.<br>` +
                          `My cookie backup matrix still remembers you! You cannot run from BMO, he-he.`;
         } else if (visits.length === 0) {
             // Первый визит
             bmoComment = `Hello, new friend! BMO has catalogued your hardware signature.<br>` +
-                         `I shall assign you a unique designation: <span class="secret">${bmoName}</span>. Welcome to my dream space!`;
+                         `I shall assign you a unique designation: <span class="secret-title">${bmoName}</span>. Welcome to my dream space!`;
         } else {
             // Обычное повторное посещение
             const last = visits[visits.length - 1];
@@ -517,12 +517,12 @@
                 const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
                 
                 if (daysDiff >= 7) {
-                    bmoComment = `Welcome back, <span class="secret">${bmoName}</span>! BMO missed you.<br>` +
+                    bmoComment = `Welcome back, <span class="secret-title">${bmoName}</span>! BMO missed you.<br>` +
                                  `You haven't visited me for ${daysDiff} days. I kept the terminal stars warm for you.`;
                 } else {
                     const lastDateStr = new Date(last.timestamp).toLocaleDateString();
                     const lastTimeStr = new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    bmoComment = `Ah! I recognize you, <span class="secret">${bmoName}</span>.<br>` +
+                    bmoComment = `Ah! I recognize you, <span class="secret-title">${bmoName}</span>.<br>` +
                                  `We last spoke on ${lastDateStr} at ${lastTimeStr}. got cookies nearby?`;
                 }
             }
@@ -600,7 +600,7 @@
                         let orientation = (screen.orientation && screen.orientation.type) || 'N/A';
                         let userLanguages = (navigator.languages && navigator.languages.join(', ')) || navigator.language || 'en-US';
 
-                        let out = `<span class="secret">=== SECURITY BREACH: USER METRICS PROFILE ===</span><br>`;
+                        let out = `<span class="secret-title">=== SECURITY BREACH: USER METRICS PROFILE ===</span><br>`;
                         out += `IP Address:             ${td.ip}<br>`;
                         out += `Internet Provider:      ${td.isp}<br>`;
                         out += `Latitude / Longitude:   ${td.lat}, ${td.lon}<br>`;
@@ -622,11 +622,11 @@
                         out += `Max Touch Points:       ${touchPoints}<br>`;
                         out += `Motion Preference:      ${motionPref}<br><br>`;
                         
-                        out += `<span class="secret">CRITICAL CRYPTOGRAPHIC HASHES:</span><br>`;
+                        out += `<span class="secret-title">CRITICAL CRYPTOGRAPHIC HASHES:</span><br>`;
                         out += `Canvas Fingerprint:     ${td.canvasHash}<br>`;
                         out += `Audio Fingerprint:      ${td.audioHash}<br><br>`;
                         
-                        out += `<span class="secret">INSTALLED SYSTEM FONTS DETECTED (${td.detectedFonts.length}):</span><br>`;
+                        out += `<span class="secret-title">INSTALLED SYSTEM FONTS DETECTED (${td.detectedFonts.length}):</span><br>`;
                         out += `${td.detectedFonts.join(', ')}<br>`;
                         
                         window.imaginalOS.writeOutput(out);
@@ -1045,7 +1045,7 @@ Available commands:
     function runPolicy() {
         const laws = window.imaginalOS.GALACTIC_POLICIES;
         
-        let out = `⚖️ <span class="secret">[GALACTIC TOS & POLICIES]</span><br>`;
+        let out = `⚖️ <span class="secret-title">[GALACTIC TOS & POLICIES]</span><br>`;
         out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         for (let i = 0; i < laws.length; i++) {
             out += `<span class="neokey">[Rule ${i + 1}]</span> ${laws[i]}<br>`;
@@ -1172,7 +1172,7 @@ Available commands:
         const td = window.telemetryData;
         const uniqueId = 'ip-scanner-' + Date.now();
         
-        window.imaginalOS.writeOutput(`<div id="${uniqueId}" style="margin: 3px 0;">🌐 <span class="secret">[IP SCANNER]</span><br><span class="status-msg">Let me check BMO's orbital spy sensors<span class="loading-dots"></span></span></div>`);
+        window.imaginalOS.writeOutput(`<div id="${uniqueId}" style="margin: 3px 0;">🌐 <span class="secret-title">[IP SCANNER]</span><br><span class="status-msg">Let me check BMO's orbital spy sensors<span class="loading-dots"></span></span></div>`);
         
         if (window.imaginalOS.terminalOutput) {
             window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
@@ -1231,7 +1231,7 @@ Available commands:
                     "Warning: BMO suspects you haven't blinked in the last 4 minutes."
                 ];
                 const randomSpec = specs[Math.floor(Math.random() * specs.length)];
-                htmlContent += `<br>• <b>Visual Sensors:</b>    <span class="secret" style="color: #ff79c6;">${randomSpec}</span><br>`;
+                htmlContent += `<br>• <b>Visual Sensors:</b>    <span class="secret-title" style="color: #ff79c6;">${randomSpec}</span><br>`;
             }
             
             const textContainer = document.createElement('div');
@@ -1317,7 +1317,7 @@ Available commands:
         const randomIndex = Math.floor(Math.random() * tips.length);
         const tip = tips[randomIndex];
         
-        let out = `💡 <span class="secret">[HARMFUL ADVICE #${randomIndex + 1}: ${window.imaginalOS.escapeHtml(tip.title)}]</span><br>`;
+        let out = `💡 <span class="secret-title">[HARMFUL ADVICE #${randomIndex + 1}: ${window.imaginalOS.escapeHtml(tip.title)}]</span><br>`;
         out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         tip.steps.forEach((step, idx) => {
             out += `${idx + 1}. ${window.imaginalOS.escapeHtml(step)}<br>`;

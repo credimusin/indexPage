@@ -377,17 +377,20 @@ div.main {
 
 /* TERMINAL SYNTAX HIGHLIGHTING */
 
-.terminal-output .cmd {
+.terminal-output .cmd,
+.terminal-hint-bar .cmd {
   color: #00ff80;
   font-weight: bold;
 }
 
-.terminal-output .dir {
+.terminal-output .dir,
+.terminal-hint-bar .dir {
   color: #61afef;
   font-weight: bold;
 }
 
-.terminal-output .file {
+.terminal-output .file,
+.terminal-hint-bar .file {
   color: #e5c07b;
 }
 
@@ -396,6 +399,13 @@ div.main {
   font-weight: bold;
   text-shadow: 0 0 2px rgba(255, 121, 198, 0.4);
   cursor: pointer;
+}
+
+.terminal-output .secret-title,
+.terminal-hint-bar .secret-title {
+  color: #ff79c6;
+  font-weight: bold;
+  text-shadow: 0 0 2px rgba(255, 121, 198, 0.4);
 }
 
 .terminal-output [data-copy] {

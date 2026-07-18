@@ -529,12 +529,12 @@
                 break;
             case 'git':
             case 'github':
-                await window.imaginalOS.writeTyped(`🐱 <span class="secret">[GITHUB REDIRECT]</span><br>Bypassing firewalls to reach creator profile: <span class="cmd">https://github.com/credimusin</span><br>`, 5);
+                await window.imaginalOS.writeTyped(`🐱 <span class="secret-title">[GITHUB REDIRECT]</span><br>Bypassing firewalls to reach creator profile: <span class="cmd">https://github.com/credimusin</span><br>`, 5);
                 window.open('https://github.com/credimusin', '_blank');
                 break;
             case 'tg':
             case 'telegram':
-                await window.imaginalOS.writeTyped(`✈️ <span class="secret">[TELEGRAM REDIRECT]</span><br>Establishing secure link to chat frequency: <span class="cmd">https://t.me/credimusin</span><br>`, 5);
+                await window.imaginalOS.writeTyped(`✈️ <span class="secret-title">[TELEGRAM REDIRECT]</span><br>Establishing secure link to chat frequency: <span class="cmd">https://t.me/credimusin</span><br>`, 5);
                 window.open('https://t.me/credimusin', '_blank');
                 break;
             case 'bmo':
@@ -553,7 +553,7 @@
                     window.imaginalOS.shellState = 'sudo_password';
                     sudoAttempts = 0;
                     terminalPromptSymbol.innerHTML = getPromptString();
-                    await window.imaginalOS.writeTyped(`🔐 <span class="secret">[SUPERUSER SECURITY CHECK]</span><br>System authentication requested. (Secret password hint: <span class="file">bmo</span>)<br>`, 6);
+                    await window.imaginalOS.writeTyped(`🔐 <span class="secret-title">[SUPERUSER SECURITY CHECK]</span><br>System authentication requested. (Secret password hint: <span class="file">bmo</span>)<br>`, 6);
                 }
                 break;
             case 'exit':
@@ -608,7 +608,7 @@
                 if (res.node.type === 'dir') {
                     return `<span class="dir">${m}/</span>`;
                 } else if (res.node.type === 'file' && m.endsWith('.db')) {
-                    return `<span class="secret">${m}</span>`;
+                    return `<span class="secret-title">${m}</span>`;
                 } else {
                     return `<span class="file">${m}</span>`;
                 }

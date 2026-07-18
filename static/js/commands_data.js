@@ -84,7 +84,7 @@
         ls: {
             desc: "List directory contents.",
             linux: "Lists directory contents of the target folder (defaulting to current directory if omitted). Supports switches like -la (mocked).",
-            project: "Lists virtual directories and files. Folders are color-coded in <span class='dir'>blue</span>, regular text files in <span class='file'>green</span>, and locked binary databases in <span class='secret'>red</span>."
+            project: "Lists virtual directories and files. Folders are color-coded in <span class='dir'>blue</span>, regular text files in <span class='file'>green</span>, and locked binary databases in <span class='secret-title'>red</span>."
         },
         cd: {
             desc: "Change working directory.",
@@ -309,7 +309,7 @@
     };
 
     const COOKIE_POLICY_TEXT = 
-        `🍪 <span class="secret">[COOKIE DIRECTIVE]</span><br>` +
+        `🍪 <span class="secret-title">[COOKIE DIRECTIVE]</span><br>` +
         `<span style="color: #50fa7b;">--------------------------------------------------</span><br>` +
         `Just like 99.9% of the websites in this sector of the galaxy, we collect cookies.<br><br>` +
         `We do this because:<br>` +
