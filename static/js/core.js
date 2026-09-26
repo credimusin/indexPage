@@ -1,7 +1,8 @@
 /**
  * imaginalOS - Core Module
- * Shared primitives every other module depends on: the version banner and
- * HTML escaping. Loaded first so the rest of the system never has to guess.
+ * Shared primitives every other module depends on: the version banner, HTML
+ * escaping, and the single-flight script loader. Loaded first so the rest of
+ * the system never has to guess.
  */
 (function() {
     window.imaginalOS = window.imaginalOS || {};
@@ -33,5 +34,37 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    };
+
+    // Single-flight <script> injector. Concurrent callers share one request,
+    // and a failed load is forgotten so a later attempt can retry.
+    //
+    // The URL carries the version so a browser that cached a previous copy of
+    // a terminal module cannot end up mixing old and new files in one session:
+    // without it, a cached pre-refactor commands.js would pair with a fresh
+    // app.js and half the commands would quietly stop working.
+    const scriptLoads = new Map();
+
+    window.imaginalOS.loadScript = function(src) {
+        if (scriptLoads.has(src)) {
+            return scriptLoads.get(src);
+        }
+
+        const versioned = src + (src.includes('?') ? '&' : '?') + 'v=' + window.imaginalOS.VERSION;
+
+        const pending = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = versioned;
+            script.async = false;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Failed to load ' + src));
+            document.body.appendChild(script);
+        }).catch((err) => {
+            scriptLoads.delete(src);
+            throw err;
+        });
+
+        scriptLoads.set(src, pending);
+        return pending;
     };
 })();

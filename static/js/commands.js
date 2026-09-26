@@ -374,6 +374,25 @@
         window.open(target, '_blank');
     }
 
+    // Visit memory: a short local trace used to greet repeat visitors. It holds
+    // city and country only - never the address, and never indefinitely.
+    const VISIT_KEY = 'bmo_visit_history_v2';
+    const VISIT_COOKIE = 'bmo_backup_history_v2';
+    const VISIT_WINDOW_DAYS = 180;
+    const VISIT_WINDOW_MS = VISIT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const VISIT_LIMIT = 10;
+
+    // Earlier builds stored the raw IP here. Drop those records once, so the
+    // old copy does not linger in a visitor's browser for a year.
+    function purgeLegacyVisitData() {
+        try {
+            localStorage.removeItem('bmo_visit_history');
+        } catch {}
+        try {
+            document.cookie = 'bmo_backup_history=; max-age=0; path=/; SameSite=Lax; Secure';
+        } catch {}
+    }
+
     function getCookie(name) {
         const matches = document.cookie.match(new RegExp(
             "(?:^|; )" + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + "=([^;]*)"
@@ -382,10 +401,15 @@
     }
 
     function setCookie(name, value, days = 365) {
-        const d = new Date();
-        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-        const expires = "expires=" + d.toUTCString();
-        document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
+        const maxAge = Math.round(days * 24 * 60 * 60);
+        document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}` +
+            `; max-age=${maxAge}; path=/; SameSite=Lax; Secure`;
+    }
+
+    // The BIM editor lives in its own module; fetch it only when asked for it.
+    async function openVim(pathStr) {
+        if (!window.imaginalOS.runVim && !await ensureModule('vim')) return;
+        window.imaginalOS.runVim(pathStr);
     }
 
     function getBmoUid() {
@@ -408,14 +432,33 @@
         return `HUMAN-${osPart}-${gpu}-${num}`;
     }
 
+    // Shown whenever a reading could not be taken. Without it the fallback
+    // values look like real measurements, which is exactly the wrong impression.
+    // Shown whenever a reading could not be taken. Without it the fallback
+    // values look like real measurements, which is the wrong impression.
+    function offlineNotice() {
+        const status = window.telemetryData.geoStatus;
+        if (status === 'ready') return '';
+
+        const reason = status === 'denied'
+            ? 'Location permission was declined, so there is nothing to report.'
+            : 'No position or forecast was available, so nothing is shown here.';
+
+        return `<br><span class="err">[NO SIGNAL] ${reason}</span><br>` +
+               `<span style="color: #8892b0;">Nothing here is guessed. Location and weather come from the Cloudflare Pages</span><br>` +
+               `<span style="color: #8892b0;">Functions in <span class="cmd">functions/api/</span> - run <span class="cmd">npx wrangler pages dev .</span></span><br>` +
+               `<span style="color: #8892b0;">locally, or re-allow location for this site in your browser.</span><br>`;
+    }
+
     async function runWhoami() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         const bmoName = getBmoUid();
         
         let out = '';
         out += `Username:     <span class="secret-title">${bmoName}</span> (Visitor / Biological Unit)<br>`;
         out += `Client IP:    ${td.ip}<br>`;
-        out += `Coordinates:  ${td.lat}, ${td.lon} (${td.city}, ${td.country})<br>`;
+        out += `Coordinates:  ${td.locationSource ? `${td.lat}, ${td.lon} (${window.imaginalOS.getLocationLabel()})` : '<span class="err">unavailable</span>'}<br>`;
         out += `User Agent:   ${navigator.userAgent}<br>`;
         out += `OS Target:    ${td.os}<br>`;
         out += `Browser:      ${td.browser}<br>`;
@@ -423,17 +466,19 @@
         
         let visits = [];
         let cacheClearedAlert = false;
-        
-        // 1. Пытаемся считать историю из LocalStorage
+
+        purgeLegacyVisitData();
+
+        // 1. Read the visit history from localStorage
         try {
-            visits = JSON.parse(localStorage.getItem('bmo_visit_history') || '[]');
+            visits = JSON.parse(localStorage.getItem(VISIT_KEY) || '[]');
         } catch {
             visits = [];
         }
-        
-        // 2. Если LocalStorage пуст, проверяем куки (резервная копия)
+
+        // 2. If localStorage is empty, fall back to the cookie copy
         if (visits.length === 0) {
-            const cookieHistory = getCookie('bmo_backup_history');
+            const cookieHistory = getCookie(VISIT_COOKIE);
             if (cookieHistory) {
                 try {
                     visits = JSON.parse(cookieHistory);
@@ -443,10 +488,16 @@
                 }
             }
         }
-        
+
+        // Forget anything older than the retention window, so the record is a
+        // recent trace rather than an indefinite one.
+        const cutoff = Date.now() - VISIT_WINDOW_MS;
+        visits = visits.filter(v => v && typeof v.timestamp === 'number' && v.timestamp >= cutoff);
+
+        // The IP is shown for this visit and then deliberately dropped: BMO
+        // remembers where you were, not which network you came from.
         const currentVisit = {
             timestamp: Date.now(),
-            ip: td.ip,
             city: td.city || 'Unknown',
             country: td.country || 'Unknown'
         };
@@ -487,24 +538,26 @@
             }
         }
         
-        // Добавляем текущий визит в историю (ограничим 10)
+        // Record this visit, keeping only the most recent handful
         visits.push(currentVisit);
-        if (visits.length > 10) {
+        if (visits.length > VISIT_LIMIT) {
             visits.shift();
         }
-        
-        // Синхронизируем LocalStorage и Cookies
+
+        // Mirror to localStorage and to the cookie copy
         try {
             const serialized = JSON.stringify(visits);
-            localStorage.setItem('bmo_visit_history', serialized);
-            setCookie('bmo_backup_history', serialized, 365);
+            localStorage.setItem(VISIT_KEY, serialized);
+            setCookie(VISIT_COOKIE, serialized, VISIT_WINDOW_DAYS);
         } catch {}
-        
+
         out += `<br><span style="color: #64ffda; font-weight: bold;">BMO Telemetry Analysis:</span><br>${bmoComment}<br>`;
+        out += offlineNotice();
         await writeTyped(out, 4);
     }
 
     async function runNeofetch() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         
         const logo = `<pre class="ascii-logo">
@@ -526,13 +579,16 @@
         out += `<span class="neokey">CPU Cores:</span>   ${td.cores} cores<br>`;
         out += `<span class="neokey">RAM:</span>         ${td.memory}<br>`;
         out += `<span class="neokey">GPU:</span>         ${td.gpuRenderer.split('/').pop().replace('Direct3D11', '').trim()}<br>`;
-        out += `<span class="neokey">Weather:</span>     ${td.weatherText} (${td.temperature})<br>`;
+        out += `<span class="neokey">Location:</span>    ${window.imaginalOS.escapeHtml(window.imaginalOS.getLocationLabel())}<br>`;
+        out += `<span class="neokey">Weather:</span>     ${window.imaginalOS.escapeHtml(td.weatherText)} (${window.imaginalOS.escapeHtml(td.temperature)})<br>`;
         out += `<span style="color: #50fa7b;">---------------------------------------------</span><br>`;
+        out += offlineNotice();
 
         await writeTyped(out, 2);
     }
 
-    function runHarvester() {
+    async function runHarvester() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         
         window.imaginalOS.writeOutput("[ * ] INITIALIZING TELEMETRY FORENSICS SCANNER...<br>");
@@ -561,8 +617,8 @@
 
                         let out = `<span class="secret-title">=== SECURITY BREACH: USER METRICS PROFILE ===</span><br>`;
                         out += `IP Address:             ${td.ip}<br>`;
-                        out += `Internet Provider:      ${td.isp}<br>`;
-                        out += `Latitude / Longitude:   ${td.lat}, ${td.lon}<br>`;
+                        out += `Internet Provider:      ${td.locationSource === 'edge' ? window.imaginalOS.escapeHtml(td.isp) : '<span class="err">unavailable</span>'}<br>`;
+                        out += `Latitude / Longitude:   ${td.locationSource ? `${td.lat}, ${td.lon}` : '<span class="err">unavailable</span>'}<br>`;
                         out += `Timezone Database:      ${td.timezone}<br>`;
                         out += `System Languages:       ${userLanguages}<br>`;
                         out += `Cookies Configured:     ${td.cookiesEnabled}<br>`;
@@ -587,7 +643,8 @@
                         
                         out += `<span class="secret-title">INSTALLED SYSTEM FONTS DETECTED (${td.detectedFonts.length}):</span><br>`;
                         out += `${td.detectedFonts.join(', ')}<br>`;
-                        
+                        out += offlineNotice();
+
                         window.imaginalOS.writeOutput(out);
                     }, 500);
                 }, 400);
@@ -602,12 +659,22 @@
     };
 
     async function runWeather() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
-        const type = window.imaginalOS.describeWeatherCode(td.weatherCode).type;
+        const hasWeather = td.weatherCode !== null && td.weatherCode !== undefined;
+        const type = hasWeather ? window.imaginalOS.describeWeatherCode(td.weatherCode).type : 'unknown';
         const emoji = WEATHER_EMOJI[type] || '🌫️';
+        const where = window.imaginalOS.getLocationLabel();
 
-        let out = `Weather Report for <span class="pth">${window.imaginalOS.escapeHtml(td.city)}, ${window.imaginalOS.escapeHtml(td.country)}</span>:<br>`;
+        let out = `Weather Report for <span class="pth">${window.imaginalOS.escapeHtml(where)}</span>:<br>`;
         out += `<span style="font-size: 3.5rem; display: block; margin: 10px 0; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));">${emoji}</span>`;
+        if (!hasWeather) {
+            out += `Condition:          <span class="err">unavailable</span><br>`;
+            out += offlineNotice();
+            await writeTyped(out, 2);
+            return;
+        }
+
         out += `Condition:          ${window.imaginalOS.escapeHtml(td.weatherText)}<br>`;
         out += `Temperature:        ${window.imaginalOS.escapeHtml(td.temperature)}<br>`;
         out += `Wind Speed:         ${td.windspeed}<br>`;
@@ -666,6 +733,7 @@
         const phrase = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : "Foggy weather.";
         
         out += `<br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`;
+        out += offlineNotice();
         await writeTyped(out, 2);
     }
 
@@ -1025,12 +1093,43 @@ ${rows.join('\n')}
         window.imaginalOS.writeOutput(out + `<br>`);
     }
 
+    // Optional modules, fetched on first use. Declared here rather than in the
+    // dispatcher so a command can never be reached without its dependency.
+    const MODULE_LABELS = {
+        vim: 'BIM editor',
+        spacerock: 'arcade cabinet'
+    };
+
+    async function ensureModule(name) {
+        const loader = window.imaginalOS.loadModule;
+        if (typeof loader !== 'function') return false;
+        if (window.imaginalOS.MODULES && document.querySelector(`script[src*="${window.imaginalOS.MODULES[name]}"]`)) {
+            return true;
+        }
+
+        window.imaginalOS.writeOutput(
+            `<span class="status-msg">Waking up the ${MODULE_LABELS[name] || name} module<span class="loading-dots"></span></span><br>`
+        );
+
+        try {
+            await loader(name);
+            return true;
+        } catch (err) {
+            window.imaginalOS.playBeepSound(250, 0.2, 'sawtooth');
+            window.imaginalOS.writeOutput(
+                `<span class="err">${name}: module failed to load (${window.imaginalOS.escapeHtml(err.message)})</span><br>`
+            );
+            return false;
+        }
+    }
+
     function runNano() {
         window.imaginalOS.playBeepSound(300, 0.1, 'sine');
         window.imaginalOS.writeOutput(`<span class="err">nano: command not found.</span> Did you mean <span class="cmd">'banano'</span>? 🍌<br>`);
     }
 
-    function runDate() {
+    async function runDate() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         let out = new Date().toString() + '<br>';
         if (td.sunrise && td.sunset) {
@@ -1038,7 +1137,7 @@ ${rows.join('\n')}
             out += `   Sunrise: <span class="neokey">${td.sunrise}</span> (local time)<br>`;
             out += `   Sunset:  <span class="neokey">${td.sunset}</span> (local time)<br>`;
         }
-        window.imaginalOS.writeOutput(out);
+        window.imaginalOS.writeOutput(out + offlineNotice());
     }
 
     function runMute(muted) {
@@ -1046,7 +1145,8 @@ ${rows.join('\n')}
         window.imaginalOS.writeOutput(`Terminal audio effects ${muted ? 'MUTED' : 'UNMUTED'}.<br>`);
     }
 
-    function runGame() {
+    async function runGame() {
+        if (!window.imaginalOS.runSpaceRock && !await ensureModule('spacerock')) return;
         if (!window.imaginalOS.runSpaceRock) {
             window.imaginalOS.writeOutput("<span class='err'>game: failed to load game module</span><br>");
             return;
@@ -1246,7 +1346,8 @@ ${rows.join('\n')}
         });
     }
 
-    function runIp() {
+    async function runIp() {
+        await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         const uniqueId = 'ip-scanner-' + Date.now();
         
@@ -1273,6 +1374,9 @@ ${rows.join('\n')}
             
             if (!td || !td.ip || td.ip === 'IP Obfuscated') {
                 htmlContent = `Hmm... BMO's signals are bouncing off a cosmic reflector.<br>Your IP seems to be hidden under a nebula shield (Obfuscated).<br>Did a space mouse chew through your fiber optic cable?<br>`;
+                if (td.geoStatus === 'unavailable') {
+                    htmlContent += `<span class="err">Sensors offline: the edge lookup endpoint did not answer.</span><br>`;
+                }
             } else {
                 htmlContent = `Ah! It seems your IP address is <span class="file">${window.imaginalOS.escapeHtml(td.ip)}</span>, correct?<br><br>` +
                               `<b>🧠 BMO's Telepathic Speculations:</b><br>` +
@@ -1613,6 +1717,7 @@ ${rows.join('\n')}
     ns.runDate = runDate;
     ns.runMute = runMute;
     ns.runGame = runGame;
+    ns.openVim = openVim;
     ns.runGit = runGit;
     ns.runTelegram = runTelegram;
     ns.runSudo = runSudo;

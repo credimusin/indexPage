@@ -29,5 +29,6 @@
 
 User-agent: *
 Allow: /
+Disallow: /api/
 
 Sitemap: https://imaginal.dev/sitemap.xml

@@ -504,10 +504,7 @@ div.main {
 /* VIM EDITOR STYLES */
 .vim-editor {
     position: absolute;
-    top: 36px; /* Below the terminal header */
-    left: 0;
-    width: 100%;
-    height: calc(100% - 36px);
+    inset: 0; /* .terminal-body already sits below the header */
     background: rgba(8, 12, 20, 0.98);
     backdrop-filter: blur(15px);
     display: flex;
@@ -781,15 +778,12 @@ div.main {
   }
 }
 
-/* SPACEROCK GAME STYLES */
+/* SPACEROCK GAME STYLES
+   The playfield is the terminal body: no panel, no offset, no visible edge.
+   (.terminal-body is a sibling of the header, so it already starts below it.) */
 .spacerock-game {
     position: absolute;
-    top: 36px; /* Below the terminal header */
-    left: 0;
-    width: 100%;
-    height: calc(100% - 36px);
-    background: rgba(4, 6, 10, 0.98);
-    backdrop-filter: blur(15px);
+    inset: 0;
     display: flex;
     flex-direction: column;
     z-index: 100;
@@ -809,9 +803,9 @@ div.main {
 
 .spacerock-canvas {
     background: #050811;
-    border: 1.5px solid rgba(0, 255, 128, 0.25);
-    box-shadow: 0 0 20px rgba(0, 255, 128, 0.15);
     display: block;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 /* Ambient Error Page Styles */

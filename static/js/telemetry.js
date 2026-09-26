@@ -4,8 +4,6 @@
 (function() {
     const FALLBACK_LAT = 59.9386;
     const FALLBACK_LON = 30.3141;
-    const GEO_TIMEOUT_MS = 4000;
-    const WEATHER_TIMEOUT_MS = 4000;
 
     // WMO weather interpretation codes -> the small set of scene types the
     // canvas knows how to draw. `weather` prints these labels too.
@@ -72,7 +70,14 @@
         doNotTrack: navigator.doNotTrack || 'N/A',
         gpuVendor: 'Unknown',
         gpuRenderer: 'Unknown',
-        referrer: document.referrer || 'Direct Visit'
+        referrer: document.referrer || 'Direct Visit',
+        // 'idle' before anything is requested, then:
+        //   'ready'   real measurement (from the edge or the browser)
+        //   'offline' nothing available and no prompt was allowed
+        //   'denied'  the visitor refused the browser location prompt
+        geoStatus: 'idle',
+        // 'edge' | 'browser' | null - which one produced lat/lon
+        locationSource: null
     };
 
     function parseUA() {
@@ -234,87 +239,158 @@
         }
     }
 
-    // Three geolocation providers, tried in order until one answers. Each is
-    // bounded by a timeout so a hanging endpoint cannot stall the whole chain.
+    // Geo and weather come from our own /api endpoints, which resolve them on
+    // the edge. No third party ever sees a visitor's IP address.
+    const GEO_URL = '/api/geo';
+    const WEATHER_URL = '/api/weather';
+    const GEO_TIMEOUT_MS = 5000;
+    const WEATHER_TIMEOUT_MS = 6000;
+    const GEO_CACHE_KEY = 'imaginal_geo_cache';
+    const GEO_CACHE_TTL_MS = 30 * 60 * 1000;
+    const GEO_RETRY_MS = 15000;
+
+    let geoPromise = null;
+    let browserPromise = null;
+    let lastGeoAttempt = 0;
+
     async function fetchJson(url, timeout) {
         const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
     }
 
-    const GEO_PROVIDERS = [
-        {
-            url: 'https://ipapi.co/json/',
-            parse: (data) => data && data.ip && ({
-                ip: data.ip,
-                city: data.city,
-                country: data.country_name,
-                isp: data.org,
-                latitude: data.latitude,
-                longitude: data.longitude,
-                timezone: data.timezone
-            })
-        },
-        {
-            url: 'https://ipinfo.io/json',
-            parse: (data) => {
-                if (!data || !data.ip) return null;
-                const [lat, lon] = (data.loc || '').split(',');
-                return {
-                    ip: data.ip,
-                    city: data.city,
-                    country: data.country,
-                    isp: data.org,
-                    latitude: parseFloat(lat),
-                    longitude: parseFloat(lon),
-                    timezone: data.timezone
-                };
-            }
-        },
-        {
-            url: 'https://ipwho.is/',
-            parse: (data) => data && data.success && ({
-                ip: data.ip,
-                city: data.city,
-                country: data.country,
-                isp: data.connection && data.connection.isp,
-                latitude: data.latitude,
-                longitude: data.longitude,
-                timezone: data.timezone && data.timezone.id
-            })
+    function readGeoCache() {
+        try {
+            const raw = sessionStorage.getItem(GEO_CACHE_KEY);
+            if (!raw) return null;
+            const cached = JSON.parse(raw);
+            return Date.now() - cached.at < GEO_CACHE_TTL_MS ? cached : null;
+        } catch {
+            return null;
         }
-    ];
+    }
 
-    async function resolveGeo() {
-        for (const provider of GEO_PROVIDERS) {
-            try {
-                const geo = provider.parse(await fetchJson(provider.url, GEO_TIMEOUT_MS));
-                if (geo) return geo;
-            } catch {
-                // Try the next provider.
-            }
+    function writeGeoCache(geo, weather) {
+        try {
+            sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ at: Date.now(), geo, weather }));
+        } catch {}
+    }
+
+    let warnedAboutEdge = false;
+
+    // Served without the Pages runtime - a plain static server, most likely -
+    // the /api endpoints are missing by design. That is a note, not a fault,
+    // so it is reported once and calmly.
+    function warnAboutMissingEdge() {
+        if (warnedAboutEdge) return;
+        warnedAboutEdge = true;
+
+        const isLocal = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/.test(window.location.hostname);
+        const hint = 'npx wrangler pages dev . --port 8788';
+        const log = isLocal ? console.info : console.warn;
+
+        log(
+            `%c[imaginalOS]${isLocal ? ' Local dev' : ' Edge sensors unreachable'}` +
+            ` - /api/geo and /api/weather are Cloudflare Pages Functions.\n` +
+            `Run ${hint} to serve them. Until then, commands that need a\n` +
+            `location offer the browser's own signal instead.`,
+            'color: #8892b0'
+        );
+    }
+
+    // Single wording for "where am I", whichever source answered.
+    function getLocationLabel() {
+        const td = window.telemetryData;
+        if (td.locationSource === 'browser') {
+            return `${td.lat.toFixed(3)}, ${td.lon.toFixed(3)} (browser signal, ${td.timezone})`;
         }
-        return null;
+        if (td.locationSource === 'edge' && td.city) {
+            return `${td.city}, ${td.country}`;
+        }
+        return 'unknown position';
     }
 
     function applyGeo(geo) {
         const td = window.telemetryData;
-        td.ip = geo.ip || 'IP Obfuscated';
-        td.city = geo.city || 'Saint Petersburg';
-        td.country = geo.country || 'Russia';
-        td.isp = geo.isp || 'VLAN Fallback';
-        td.lat = Number.isFinite(geo.latitude) ? geo.latitude : FALLBACK_LAT;
-        td.lon = Number.isFinite(geo.longitude) ? geo.longitude : FALLBACK_LON;
-        td.timezone = geo.timezone || 'Europe/Moscow';
+        if (geo) {
+            td.geoStatus = 'ready';
+            td.locationSource = 'edge';
+            td.ip = geo.ip || 'IP Obfuscated';
+            td.city = geo.city || '';
+            td.country = geo.country || '';
+            td.lat = Number.isFinite(geo.latitude) ? geo.latitude : FALLBACK_LAT;
+            td.lon = Number.isFinite(geo.longitude) ? geo.longitude : FALLBACK_LON;
+            td.timezone = geo.timezone || 'Europe/Moscow';
+            return;
+        }
+        // Nothing to go on. Location stays unset rather than being invented:
+        // a plausible-looking guess is worse than an honest blank.
+        td.geoStatus = 'offline';
+        td.locationSource = null;
+        td.ip = 'IP Obfuscated';
+        td.city = '';
+        td.country = '';
+    }
+
+    function applyBrowserGeo(coords) {
+        const td = window.telemetryData;
+        td.geoStatus = 'ready';
+        td.locationSource = 'browser';
+        td.lat = coords.latitude;
+        td.lon = coords.longitude;
+        td.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local time';
+        // A reverse geocoder would be a third party again, so there is no city
+        // name here: the timezone and the coordinates are the honest labels.
+        td.city = '';
+        td.country = '';
+    }
+
+    function requestBrowserLocation() {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+                resolve(null);
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                }),
+                () => resolve(null),
+                // A cached fix is reused, so the permission prompt appears once.
+                { timeout: 10000, maximumAge: 600000, enableHighAccuracy: false }
+            );
+        });
+    }
+
+    // Used only when a command explicitly needs a location and the edge could
+    // not supply one (typically when the site is served without the Pages
+    // runtime). The browser asks the visitor first.
+    async function applyBrowserFallback() {
+        const coords = await requestBrowserLocation();
+        if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
+            window.telemetryData.geoStatus = 'denied';
+            window.telemetryData.locationSource = null;
+            return false;
+        }
+
+        applyBrowserGeo(coords);
+        const weather = await fetchJson(
+            `${WEATHER_URL}?lat=${coords.latitude.toFixed(3)}&lon=${coords.longitude.toFixed(3)}`,
+            WEATHER_TIMEOUT_MS
+        ).catch(() => null);
+        applyWeather(weather);
+        return true;
     }
 
     function applyWeather(weather) {
         const td = window.telemetryData;
         if (!weather) {
-            td.weatherCode = 0;
-            td.temperature = '15°C';
-            td.windspeed = '5 km/h';
-            interpretWeatherCode(0);
+            // No measurement: say so rather than inventing a plausible one.
+            td.weatherCode = null;
+            td.weatherText = 'no signal';
+            td.temperature = 'unavailable';
+            td.windspeed = 'unavailable';
             return;
         }
 
@@ -346,21 +422,72 @@
         if (d.precipitation_sum && d.precipitation_sum[0] !== undefined) td.precipitation = `${d.precipitation_sum[0]} mm`;
     }
 
-    async function getGeoAndWeather() {
-        const geo = await resolveGeo();
-        applyGeo(geo || { ip: null });
-
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${window.telemetryData.lat}` +
-                    `&longitude=${window.telemetryData.lon}&current_weather=true` +
-                    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=auto`;
-
-        let weather = null;
-        try {
-            weather = await fetchJson(url, WEATHER_TIMEOUT_MS);
-        } catch {
-            weather = null;
+    // Nothing about a visitor leaves the page until they touch it. The first
+    // pointer or key event (or the first command that needs the data) calls
+    // this; the result is memoised for the session and cached for a short
+    // while so a reload does not ask again.
+    // Memoised on its own so a refusal cannot turn into a prompt per command.
+    // The browser also remembers a denial, so there is nothing to re-ask.
+    function startBrowserFallback() {
+        if (!browserPromise) {
+            browserPromise = applyBrowserFallback();
         }
-        applyWeather(weather);
+        return browserPromise;
+    }
+
+    function ensureGeo(options = {}) {
+        const { allowPrompt = false } = options;
+
+        if (geoPromise) return geoPromise;
+
+        // A failed edge lookup stays retryable, but not on every command. A
+        // command that is allowed to prompt must not be gated by that window:
+        // it would otherwise report "no signal" for up to GEO_RETRY_MS.
+        if (Date.now() - lastGeoAttempt < GEO_RETRY_MS) {
+            return allowPrompt ? startBrowserFallback() : Promise.resolve();
+        }
+        lastGeoAttempt = Date.now();
+
+        const cached = readGeoCache();
+        if (cached) {
+            geoPromise = Promise.resolve().then(() => {
+                applyGeo(cached.geo);
+                applyWeather(cached.weather);
+            });
+            return geoPromise;
+        }
+
+        geoPromise = Promise.all([
+            fetchJson(GEO_URL, GEO_TIMEOUT_MS).catch(() => null),
+            fetchJson(WEATHER_URL, WEATHER_TIMEOUT_MS).catch(() => null)
+        ]).then(async ([geo, weather]) => {
+            if (geo) {
+                applyGeo(geo);
+                applyWeather(weather);
+                // Only a successful lookup is worth remembering, and only the
+                // edge one: a stored browser fix would go stale the moment the
+                // visitor travels, whereas an IP-derived location self-corrects.
+                writeGeoCache(geo, weather);
+                return;
+            }
+
+            // The edge could not answer. Only a command the visitor typed may
+            // escalate to a browser permission prompt - a passive visitor, or
+            // the first stray click, never triggers one.
+            if (allowPrompt) {
+                await startBrowserFallback();
+                return;
+            }
+
+            applyGeo(null);
+            applyWeather(weather);
+            geoPromise = null;
+            warnAboutMissingEdge();
+        }).catch(() => {
+            geoPromise = null;
+        });
+
+        return geoPromise;
     }
 
     function detectSeason() {
@@ -389,13 +516,12 @@
         fetchNetworkDetails();
         fetchBatteryDetails();
         detectSeason();
-        getGeoAndWeather().catch(() => {
-            window.telemetryData.ip = 'IP Obfuscated';
-        });
     }
 
     // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.initTelemetry = initTelemetry;
+    window.imaginalOS.ensureGeo = ensureGeo;
+    window.imaginalOS.getLocationLabel = getLocationLabel;
     window.imaginalOS.describeWeatherCode = describeWeatherCode;
 })();

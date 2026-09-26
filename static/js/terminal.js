@@ -437,7 +437,7 @@
             case 'banano':
             case 'edit':
             case 'vim':
-                os.runVim(args[0]);
+                await os.openVim(args[0]);
                 break;
             case 'clear':
                 triggerDegaussClear();
@@ -453,7 +453,7 @@
                 break;
             case 'harvester':
             case 'scan':
-                os.runHarvester();
+                await os.runHarvester();
                 break;
             case 'weather':
                 if (args[0]) {
@@ -466,7 +466,7 @@
                 os.runOpen(args[0]);
                 break;
             case 'ip':
-                os.runIp();
+                await os.runIp();
                 break;
             case 'pass':
                 await os.runPass(args[0]);
@@ -486,13 +486,13 @@
                 os.runPolicy();
                 break;
             case 'date':
-                os.runDate();
+                await os.runDate();
                 break;
             case 'game':
             case 'spacerock':
             case 'spacerocks':
             case 'asteroids':
-                os.runGame();
+                await os.runGame();
                 break;
             case 'matrix':
                 os.startMatrix();

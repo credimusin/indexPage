@@ -21,39 +21,22 @@
     let lastAngle = null;
 
     let vfsLoadingPromise = null;
+    // Shares the single-flight loader with the terminal, so opening the dock
+    // and opening the shell can never inject vfs.js twice.
     function ensureVFS() {
         if (window.imaginalOS.filesystem) return Promise.resolve(true);
-        if (vfsLoadingPromise) return vfsLoadingPromise;
 
-        vfsLoadingPromise = new Promise((resolve) => {
-            if (window.imaginalOS.filesystem) {
-                resolve(true);
-                return;
-            }
-            const existing = document.querySelector('script[src*="vfs.js"]');
-            if (existing) {
-                if (window.imaginalOS.filesystem) {
-                    resolve(true);
-                } else {
-                    existing.addEventListener('load', () => resolve(true));
-                    existing.addEventListener('error', () => {
-                        vfsLoadingPromise = null;
-                        resolve(false);
-                    });
-                }
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = '/static/js/vfs.js';
-            script.async = false;
-            script.onload = () => resolve(true);
-            script.onerror = () => {
-                vfsLoadingPromise = null;
-                resolve(false);
-            };
-            document.body.appendChild(script);
-        });
+        const loader = window.imaginalOS.loadModule;
+        if (typeof loader !== 'function') return Promise.resolve(false);
 
+        if (!vfsLoadingPromise) {
+            vfsLoadingPromise = loader('vfs')
+                .then(() => !!window.imaginalOS.filesystem)
+                .catch(() => {
+                    vfsLoadingPromise = null;
+                    return false;
+                });
+        }
         return vfsLoadingPromise;
     }
 

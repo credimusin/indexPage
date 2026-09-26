@@ -32,6 +32,7 @@ export default [
             ecmaVersion: 2022,
             sourceType: "module",
             globals: {
+                ...globals.worker,
                 ...globals.serviceworker
             }
         },

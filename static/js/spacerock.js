@@ -3,9 +3,10 @@
  */
 (function() {
     const FRAME_MS = 1000 / 60;
+    // Lower bound only: the playfield tracks the terminal body, and the world
+    // wraps, so any size plays identically. The floor stops a minimised or
+    // collapsed terminal from producing a zero-sized canvas.
     const MIN_CANVAS = 320;
-    const MAX_CANVAS_W = 800;
-    const MAX_CANVAS_H = 450;
 
     let canvas = null;
     let ctx = null;
@@ -27,6 +28,7 @@
     let countdownTimer = 0;
     let lastFrameTime = 0;
     let frameScale = 1;
+    let canvasObserver = null;
 
     // Helper to play beeps using the synth engine from sound.js
     function playBeep(freq, duration, type) {
@@ -54,20 +56,21 @@
         gameEl = document.createElement('div');
         gameEl.className = 'spacerock-game';
         gameEl.innerHTML = `
-            <div class="spacerock-content" style="position: relative; display: flex; flex-direction: column; height: 100%; width: 100%; align-items: center; justify-content: center; background: #050811; border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; overflow: hidden;">
-                <canvas id="spacerockCanvas" class="spacerock-canvas" style="display: block; box-sizing: border-box; border: 1.5px solid rgba(0, 255, 128, 0.25); border-radius: 4px; box-shadow: 0 0 15px rgba(0, 255, 128, 0.15);"></canvas>
+            <div class="spacerock-content">
+                <canvas id="spacerockCanvas" class="spacerock-canvas"></canvas>
             </div>
         `;
         window.imaginalOS.terminalContainer.querySelector('.terminal-body').appendChild(gameEl);
 
         canvas = gameEl.querySelector('#spacerockCanvas');
-        const parent = canvas.parentElement;
+        fitCanvasToBox();
 
-        // Fit canvas to terminal size nicely. The lower bound matters: a tiny or
-        // minimised terminal would otherwise hand canvas.width a negative
-        // number, which the DOM converts into an unsigned 4-gigabyte bitmap.
-        canvas.width = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS_W, parent.clientWidth - 20));
-        canvas.height = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS_H, parent.clientHeight - 20));
+        // The playfield is sized from CSS, so it has to follow the terminal:
+        // maximising or restoring changes the box without a window resize.
+        if (typeof ResizeObserver !== 'undefined') {
+            canvasObserver = new ResizeObserver(() => fitCanvasToBox());
+            canvasObserver.observe(canvas.parentElement);
+        }
 
         ctx = canvas.getContext('2d');
         gameActive = true;
@@ -94,6 +97,24 @@
 
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
         tick();
+    }
+
+    // Fill the available box exactly, so there is no panel edge and no dead
+    // margin. The floor stops a minimised or collapsed terminal from handing
+    // canvas.width a negative number, which the DOM would turn into an
+    // unsigned 4-gigabyte bitmap. Entities outside a resized world simply wrap
+    // back in on the next update, so resizing mid-game is safe.
+    function fitCanvasToBox() {
+        if (!canvas) return;
+        const parent = canvas.parentElement;
+        if (!parent) return;
+
+        const width = Math.max(MIN_CANVAS, parent.clientWidth);
+        const height = Math.max(MIN_CANVAS, parent.clientHeight);
+        if (width === canvas.width && height === canvas.height) return;
+
+        canvas.width = width;
+        canvas.height = height;
     }
 
     function resetShip() {
@@ -211,6 +232,10 @@
 
         gameActive = false;
         unbindEvents();
+        if (canvasObserver) {
+            canvasObserver.disconnect();
+            canvasObserver = null;
+        }
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;

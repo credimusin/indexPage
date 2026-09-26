@@ -64,35 +64,53 @@
     let terminalLoaded = false;
     let terminalLoadPromise = null;
 
-    function injectScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = false;
-            script.onload = resolve;
-            script.onerror = () => reject(new Error('Failed to load ' + src));
-            document.body.appendChild(script);
-        });
+    // Every script the terminal can reach, and nothing else. Terminal modules
+    // are injected at runtime, so the browser cannot discover them from the
+    // markup; this manifest is the single place that knows they exist.
+    const MODULES = {
+        sound: '/static/js/sound.js',
+        data: '/static/js/commands_data.js',
+        vfs: '/static/js/vfs.js',
+        commands: '/static/js/commands.js',
+        terminal: '/static/js/terminal.js',
+        vim: '/static/js/vim.js',
+        spacerock: '/static/js/spacerock.js'
+    };
+
+    // What a bare shell needs. `vim` and `spacerock` are deliberately absent:
+    // they are pulled in by the command that uses them, so opening the
+    // terminal never pays for an editor or a game nobody asked for.
+    const TERMINAL_BOOT = ['sound', 'data', 'vfs', 'commands', 'terminal'];
+
+    function loadModule(name) {
+        const src = MODULES[name];
+        if (!src) {
+            return Promise.reject(new Error('Unknown module: ' + name));
+        }
+        if (typeof window.imaginalOS.loadScript !== 'function') {
+            return Promise.reject(new Error(reportStaleCore()));
+        }
+        return window.imaginalOS.loadScript(src);
     }
+
+    // core.js is the one file linked from the markup rather than injected, so
+    // it is the one a stale browser cache can leave behind. Without its loader
+    // nothing else can boot, which would otherwise surface as an unexplained
+    // dead terminal.
+    function reportStaleCore() {
+        const message = 'imaginalOS: core.js is an older cached copy without the module loader. Hard-reload (Ctrl+Shift+R) to fetch it.';
+        console.error('%c' + message, 'color: #ff5555; font-weight: bold;');
+        return message;
+    }
+    window.imaginalOS.loadModule = loadModule;
+    window.imaginalOS.MODULES = MODULES;
 
     async function loadTerminalScripts() {
         // vfs.js stamps the persisted filesystem with the version, so the
         // version banner has to be settled before any subsystem boots.
         await window.imaginalOS.VERSION_READY;
-
-        const scripts = [
-            '/static/js/sound.js',
-            '/static/js/commands_data.js',
-            '/static/js/vfs.js',
-            '/static/js/vim.js',
-            '/static/js/spacerock.js',
-            '/static/js/commands.js',
-            '/static/js/terminal.js'
-        ];
-
-        for (const src of scripts) {
-            if (document.querySelector(`script[src="${src}"]`)) continue;
-            await injectScript(src);
+        for (const name of TERMINAL_BOOT) {
+            await loadModule(name);
         }
     }
 
@@ -180,6 +198,20 @@
 
     const SUBSYSTEMS = ['initTelemetry', 'initWeatherCanvas', 'initCurious'];
 
+    // Geo and weather are only requested once the visitor has shown intent to
+    // interact. Merely loading the page transfers nothing to anybody.
+    const INTENT_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
+
+    function installIntentTrigger() {
+        const onIntent = () => {
+            INTENT_EVENTS.forEach(type => window.removeEventListener(type, onIntent));
+            if (window.imaginalOS.ensureGeo) {
+                window.imaginalOS.ensureGeo();
+            }
+        };
+        INTENT_EVENTS.forEach(type => window.addEventListener(type, onIntent, { once: true, passive: true }));
+    }
+
     function initSubsystem(name) {
         const init = window.imaginalOS[name];
         if (typeof init !== 'function') return;
@@ -210,6 +242,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         SUBSYSTEMS.forEach(initSubsystem);
+        installIntentTrigger();
 
         updateFavicon();
         tick();
