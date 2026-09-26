@@ -501,43 +501,6 @@ div.main {
   font-weight: bold;
 }
 
-/* CUSTOM CELESTIAL GLASS TOOLTIP */
-#celestial-tooltip {
-  position: fixed;
-  display: none;
-  background: rgba(10, 15, 28, 0.85);
-  border: 1px solid rgba(0, 255, 128, 0.3);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 255, 128, 0.1);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
-  color: #a8b2d1;
-  z-index: 10000;
-  pointer-events: none;
-  line-height: 1.55;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: opacity 0.2s ease;
-  opacity: 0;
-}
-
-#celestial-tooltip.visible {
-  display: block;
-  opacity: 1;
-}
-
-#celestial-tooltip .tooltip-title {
-  font-weight: bold;
-  color: #00ff80;
-  margin-bottom: 5px;
-  border-bottom: 1px solid rgba(0, 255, 128, 0.25);
-  padding-bottom: 3px;
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-
 /* VIM EDITOR STYLES */
 .vim-editor {
     position: absolute;

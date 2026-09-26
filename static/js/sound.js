@@ -160,11 +160,9 @@
         } catch {}
     };
 
-    // Expose helpers globally
+    // Expose helpers globally. The play* functions are also kept on window for
+    // the canvas/game modules, which are loaded independently of commands.js.
     window.imaginalOS = window.imaginalOS || {};
-    window.imaginalOS.initAudio = initAudio;
-    window.imaginalOS.playKeySound = window.playKeySound;
     window.imaginalOS.playBeepSound = window.playBeepSound;
-    window.imaginalOS.playGlitchSound = window.playGlitchSound;
     window.imaginalOS.playDegaussSound = window.playDegaussSound;
 })();

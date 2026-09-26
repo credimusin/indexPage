@@ -2,11 +2,57 @@
  * imaginalOS - CLI Commands Module
  */
 (function() {
-    const HINTS = window.imaginalOS.HINTS;
     const MAN_PAGES = window.imaginalOS.MAN_PAGES;
 
+    // Shared tail for every "path/to/thing" argument: split the argument into
+    // the directory to operate on and the entry inside it.
+    function splitTarget(pathStr) {
+        let name = pathStr;
+        let dirPath = '.';
+        if (pathStr.includes('/')) {
+            const parts = pathStr.split('/');
+            name = parts.pop();
+            dirPath = parts.join('/') || '/';
+        }
+        return { name, dirPath };
+    }
+
+    // Resolves the parent directory of a command argument. Returns null (and
+    // reports the problem) when the parent is missing or is not a directory,
+    // which is what used to crash mkdir/touch/rm/vim on paths like
+    // "about.txt/nested".
+    function resolveParentDir(cmdName, dirPath) {
+        const res = window.imaginalOS.resolvePath(dirPath);
+        if (res.error) {
+            window.imaginalOS.playBeepSound(300, 0.1, 'sine');
+            window.imaginalOS.writeTyped(`<span class='err'>${cmdName}: ${res.error}: ${window.imaginalOS.escapeHtml(dirPath)}</span><br>`, 2);
+            return null;
+        }
+        if (!window.imaginalOS.hasChildren(res.node)) {
+            window.imaginalOS.playBeepSound(300, 0.1, 'sine');
+            window.imaginalOS.writeTyped(`<span class='err'>${cmdName}: not a directory: ${window.imaginalOS.escapeHtml(dirPath)}</span><br>`, 2);
+            return null;
+        }
+        return res.node;
+    }
+
+    // Turns already-escaped text into links. Escaping happens first, so no
+    // attribute here can be broken out of by file content.
+    function linkify(escaped) {
+        const style = 'color: #64ffda; text-decoration: underline; cursor: pointer;';
+        return escaped
+            .replace(/(https?:\/\/[^\s&<"';()]+)/g, `<a href="$1" target="_blank" rel="noopener noreferrer" style="${style}">$1</a>`)
+            .replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g, `$1<a href="https://t.me/$2" target="_blank" rel="noopener noreferrer" style="${style}">@$2</a>`)
+            .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, `<a href="mailto:$1" style="${style}">$1</a>`);
+    }
+
+    function pickRandom(list, fallback) {
+        if (!list || list.length === 0) return fallback;
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
     function runLs(pathStr = '') {
-        let dirRes = window.imaginalOS.resolvePath(pathStr || '.');
+        const dirRes = window.imaginalOS.resolvePath(pathStr || '.');
         if (dirRes.error) {
             window.imaginalOS.writeOutput(`<span class="err">ls: ${dirRes.error}: ${window.imaginalOS.escapeHtml(pathStr)}</span><br>`);
             return;
@@ -30,7 +76,7 @@
         const minsStr = now.getMinutes().toString().padStart(2, '0');
         const dateStr = `${monthStr} ${dayStr} ${hoursStr}:${minsStr}`;
 
-        for (let key of keys) {
+        for (const key of keys) {
             const child = dirRes.node.children[key];
             let perms = '-rw-r--r--';
             let size = '1024';
@@ -78,7 +124,7 @@
             return;
         }
 
-        if (res.node.type !== 'dir') {
+        if (!window.imaginalOS.isDir(res.node)) {
             window.imaginalOS.playBeepSound(300, 0.1, 'sine');
             window.imaginalOS.writeOutput(`<span class="err">cd: not a directory: ${window.imaginalOS.escapeHtml(pathStr)}</span><br>`);
             return;
@@ -108,34 +154,21 @@
             return;
         }
 
+        const cmdName = batMode ? 'bat' : 'cat';
         const res = window.imaginalOS.resolvePath(pathStr);
         if (res.error) {
             window.imaginalOS.playBeepSound(300, 0.1, 'sine');
-            const cmdName = batMode ? 'bat' : 'cat';
             window.imaginalOS.writeOutput(`<span class="err">${cmdName}: ${res.error}: ${window.imaginalOS.escapeHtml(pathStr)}</span><br>`);
             return;
         }
 
-        if (res.node.type === 'dir') {
+        if (window.imaginalOS.isDir(res.node)) {
             window.imaginalOS.playBeepSound(300, 0.1, 'sine');
-            const cmdName = batMode ? 'bat' : 'cat';
             window.imaginalOS.writeOutput(`<span class="err">${cmdName}: ${window.imaginalOS.escapeHtml(pathStr)}: Is a directory</span><br>`);
             return;
         }
 
-        if (res.node.contentPath && (res.node.readonly || res.node.content === undefined)) {
-            try {
-                const response = await fetch(res.node.contentPath);
-                if (response.ok) {
-                    res.node.content = await response.text();
-                    window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-                } else {
-                    if (res.node.content === undefined) res.node.content = `[Error: Failed to load ${res.node.contentPath}]`;
-                }
-            } catch {
-                if (res.node.content === undefined) res.node.content = `[Error: Network error loading ${res.node.contentPath}]`;
-            }
-        }
+        await window.imaginalOS.loadNodeContent(res.node);
 
         const filename = pathStr.split('/').pop();
         const content = res.node.content || '';
@@ -151,24 +184,16 @@
             }
             
             const isLinkAllowed = (filename === 'contact.txt' || (res.path && res.path.includes('projects')));
-            let lines = content.split('\n');
-            let formatted = lines.map(line => {
+            const formatted = content.split('\n').map(line => {
                 let escaped = window.imaginalOS.escapeHtml(line);
-                
+
                 if (isLinkAllowed) {
-                    escaped = escaped.replace(/(https?:\/\/[^\s&<"';()]+)/g, '<a href="$1" target="_blank" style="color: #64ffda; text-decoration: underline; cursor: pointer;">$1</a>');
-                    escaped = escaped.replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g, '$1<a href="https://t.me/$2" target="_blank" style="color: #64ffda; text-decoration: underline; cursor: pointer;">@$2</a>');
-                    escaped = escaped.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" style="color: #64ffda; text-decoration: underline; cursor: pointer;">$1</a>');
+                    escaped = linkify(escaped);
                 }
-                
-                if (escaped.includes('(BMO:')) {
-                    return escaped.replace(/(\(BMO:[^)]*\))/g, '<span class="secret-title" style="color: #ff79c6; font-weight: bold;">$1</span>');
-                } else if (escaped.includes('(BMO&#039;s')) {
-                    return escaped.replace(/(\(BMO&#039;s[^)]*\))/g, '<span class="secret-title" style="color: #ff79c6; font-weight: bold;">$1</span>');
-                }
-                return escaped;
+
+                return escaped.replace(/\(BMO(?:&#039;s)?[^)]*\)/g, '<span class="secret-title" style="color: #ff79c6; font-weight: bold;">$&</span>');
             }).join('<br>');
-            
+
             window.imaginalOS.writeOutput(header + formatted + '<br>');
         }
     }
@@ -178,37 +203,27 @@
             await writeTyped("<span class='err'>mkdir: missing operand</span><br>", 2);
             return;
         }
-        
-        let dirname = pathStr;
-        let dirPathStr = '.';
-        if (pathStr.includes('/')) {
-            const parts = pathStr.split('/');
-            dirname = parts.pop();
-            dirPathStr = parts.join('/') || '/';
-        }
-        
-        const dirRes = window.imaginalOS.resolvePath(dirPathStr);
-        if (dirRes.error) {
-            await writeTyped(`<span class='err'>mkdir: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
-            return;
-        }
-        
+
+        const { name: dirname, dirPath } = splitTarget(pathStr);
+        const dirNode = resolveParentDir('mkdir', dirPath);
+        if (!dirNode) return;
+
         const sanitizedDir = dirname.replace(/[^a-zA-Z0-9_-]/g, '');
         if (!sanitizedDir || sanitizedDir !== dirname) {
             await writeTyped("<span class='err'>mkdir: invalid directory name. Use only letters, numbers, dashes and underscores.</span><br>", 2);
             return;
         }
-        
-        if (dirRes.node.children[sanitizedDir]) {
+
+        if (dirNode.children[sanitizedDir]) {
             await writeTyped(`<span class='err'>mkdir: cannot create directory '${window.imaginalOS.escapeHtml(sanitizedDir)}': File exists</span><br>`, 2);
             return;
         }
-        
-        dirRes.node.children[sanitizedDir] = {
+
+        dirNode.children[sanitizedDir] = {
             'type': 'dir',
             'children': {}
         };
-        
+
         window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
         await writeTyped(`Created folder: <span class="dir">${window.imaginalOS.escapeHtml(sanitizedDir)}/</span><br>`, 2);
     }
@@ -218,50 +233,35 @@
             await writeTyped("<span class='err'>touch: missing file operand. BMO suggests touching grass instead? he-he.</span><br>", 2);
             return;
         }
-        
-        let filename = pathStr;
-        let dirPathStr = '.';
-        if (pathStr.includes('/')) {
-            const parts = pathStr.split('/');
-            filename = parts.pop();
-            dirPathStr = parts.join('/') || '/';
-        }
-        
-        const dirRes = window.imaginalOS.resolvePath(dirPathStr);
-        if (dirRes.error) {
-            await writeTyped(`<span class='err'>touch: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
-            return;
-        }
-        
+
+        const { name: filename, dirPath } = splitTarget(pathStr);
+        const dirNode = resolveParentDir('touch', dirPath);
+        if (!dirNode) return;
+
         const sanitizedName = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
         if (!sanitizedName || sanitizedName !== filename) {
             window.imaginalOS.playBeepSound(300, 0.1, 'sine');
             await writeTyped("<span class='err'>touch: invalid filename. Use only letters, numbers, dots, and underscores.</span><br>", 2);
             return;
         }
-        
-        const dirNode = dirRes.node;
+
         if (dirNode.children[sanitizedName]) {
-            let out = `Updated timestamp of ${window.imaginalOS.escapeHtml(sanitizedName)}<br>` +
-                      `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> Touched again. Stop tickling the file system! he-he.<br>`;
+            const out = `Updated timestamp of ${window.imaginalOS.escapeHtml(sanitizedName)}<br>` +
+                        `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> Touched again. Stop tickling the file system! he-he.<br>`;
             await writeTyped(out, 2);
             return;
         }
-        
+
         dirNode.children[sanitizedName] = {
             'type': 'file',
             'content': ''
         };
-        
+
         window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-        
-        const quotes = window.imaginalOS.TOUCH_QUOTES || [];
-        const quote = quotes.length > 0 
-            ? quotes[Math.floor(Math.random() * quotes.length)]
-            : "Touched virtual file.";
-            
-        let out = `Created empty file: <span class="file">${window.imaginalOS.escapeHtml(sanitizedName)}</span>. Type 'vim ${window.imaginalOS.escapeHtml(sanitizedName)}' to edit it.<br>` +
-                  `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${quote}<br>`;
+
+        const quote = pickRandom(window.imaginalOS.TOUCH_QUOTES, "Touched virtual file.");
+        const out = `Created empty file: <span class="file">${window.imaginalOS.escapeHtml(sanitizedName)}</span>. Type 'vim ${window.imaginalOS.escapeHtml(sanitizedName)}' to edit it.<br>` +
+                    `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${quote}<br>`;
         await writeTyped(out, 2);
     }
 
@@ -270,22 +270,11 @@
             await writeTyped("<span class='err'>rm: missing operand. Did you want to delete BMO? You can't delete BMO, BMO has back-ups on the moon! he-he.</span><br>", 2);
             return;
         }
-        
-        let filename = pathStr;
-        let dirPathStr = '.';
-        if (pathStr.includes('/')) {
-            const parts = pathStr.split('/');
-            filename = parts.pop();
-            dirPathStr = parts.join('/') || '/';
-        }
-        
-        const dirRes = window.imaginalOS.resolvePath(dirPathStr);
-        if (dirRes.error) {
-            await writeTyped(`<span class='err'>rm: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`, 2);
-            return;
-        }
-        
-        const dirNode = dirRes.node;
+
+        const { name: filename, dirPath } = splitTarget(pathStr);
+        const dirNode = resolveParentDir('rm', dirPath);
+        if (!dirNode) return;
+
         const targetNode = dirNode.children[filename];
         if (!targetNode) {
             await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': No such file or directory</span><br>`, 2);
@@ -297,25 +286,18 @@
             await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Permission denied! You cannot erase system core memories, human.</span><br>`, 2);
             return;
         }
-        
-        if (targetNode.type === 'dir') {
-            const childrenKeys = Object.keys(targetNode.children || {});
-            if (childrenKeys.length > 0) {
-                await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Directory not empty</span><br>`, 2);
-                return;
-            }
+
+        if (window.imaginalOS.hasChildren(targetNode) && Object.keys(targetNode.children).length > 0) {
+            await writeTyped(`<span class='err'>rm: cannot remove '${window.imaginalOS.escapeHtml(filename)}': Directory not empty</span><br>`, 2);
+            return;
         }
-        
+
         delete dirNode.children[filename];
         window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-        
-        const roasts = window.imaginalOS.RM_ROASTS || [];
-        const roast = roasts.length > 0 
-            ? roasts[Math.floor(Math.random() * roasts.length)]
-            : "Removed file/folder.";
-            
-        let out = `Removed file/folder: ${window.imaginalOS.escapeHtml(filename)}<br>` +
-                  `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${roast}<br>`;
+
+        const roast = pickRandom(window.imaginalOS.RM_ROASTS, "Removed file/folder.");
+        const out = `Removed file/folder: ${window.imaginalOS.escapeHtml(filename)}<br>` +
+                    `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${roast}<br>`;
         await writeTyped(out, 2);
     }
 
@@ -328,19 +310,7 @@
             return;
         }
 
-        if (res.node.contentPath && (res.node.readonly || res.node.content === undefined)) {
-            try {
-                const response = await fetch(res.node.contentPath);
-                if (response.ok) {
-                    res.node.content = await response.text();
-                    window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-                } else {
-                    if (res.node.content === undefined) res.node.content = `[Error: Failed to load ${res.node.contentPath}]`;
-                }
-            } catch {
-                if (res.node.content === undefined) res.node.content = `[Error: Network error loading ${res.node.contentPath}]`;
-            }
-        }
+        await window.imaginalOS.loadNodeContent(res.node);
 
         const content = res.node.content || '';
         const header = `🔑 <span class="secret-title">[GPG PUBLIC KEY BLOCK]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
@@ -353,49 +323,38 @@
     function runHistory() {
         let output = '';
         const history = window.imaginalOS.commandHistory || [];
-        
+
         const bmoInternalLogs = window.imaginalOS.BMO_INTERNAL_LOGS || [];
         const roastComments = window.imaginalOS.ROAST_COMMENTS || [];
-        
-        let displayHistory = [];
-        for (let i = 0; i < history.length; i++) {
-            displayHistory.push({ type: 'user', cmd: history[i] });
-        }
-        
+
+        const displayHistory = history.map(cmd => ({ type: 'user', cmd }));
+
         if (displayHistory.length >= 3 && bmoInternalLogs.length > 0) {
             const numBmoLogs = 2 + Math.floor(Math.random() * 2);
             const bmoCmds = [...bmoInternalLogs].sort(() => 0.5 - Math.random()).slice(0, numBmoLogs);
-            
+
             for (let k = 0; k < bmoCmds.length; k++) {
                 const pos = 1 + Math.floor(Math.random() * (displayHistory.length - 2));
                 displayHistory.splice(pos, 0, { type: 'bmo', cmd: bmoCmds[k] });
             }
         } else if (bmoInternalLogs.length > 0) {
-            const randomBmo = bmoInternalLogs[Math.floor(Math.random() * bmoInternalLogs.length)];
-            displayHistory.unshift({ type: 'bmo', cmd: randomBmo });
+            displayHistory.unshift({ type: 'bmo', cmd: pickRandom(bmoInternalLogs) });
         }
-        
-        for (let i = 0; i < displayHistory.length; i++) {
-            const item = displayHistory[i];
+
+        displayHistory.forEach((item, i) => {
             if (item.type === 'bmo') {
                 output += `  ${i + 1}  <span class="secret-title" style="color: #ff79c6; font-style: italic; opacity: 0.85;">[BMO] ${window.imaginalOS.escapeHtml(item.cmd)}</span><br>`;
-            } else {
-                const parts = item.cmd.trim().split(' ');
-                const cmdName = parts[0].toLowerCase();
-                const validCommands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'curl', 'gpg'];
-                
-                let comment = '';
-                if (cmdName && !validCommands.includes(cmdName)) {
-                    const randomComment = roastComments.length > 0 
-                        ? roastComments[Math.floor(Math.random() * roastComments.length)]
-                        : " (typo)";
-                    comment = ` <span style="color: #ff5555; font-size: 12px; opacity: 0.7;">${randomComment}</span>`;
-                }
-                
-                output += `  ${i + 1}  ${window.imaginalOS.escapeHtml(item.cmd)}${comment}<br>`;
+                return;
             }
-        }
-        
+
+            const cmdName = item.cmd.trim().split(' ')[0].toLowerCase();
+            const comment = cmdName && !window.imaginalOS.isKnownCommand(cmdName)
+                ? ` <span style="color: #ff5555; font-size: 12px; opacity: 0.7;">${pickRandom(roastComments, " (typo)")}</span>`
+                : '';
+
+            output += `  ${i + 1}  ${window.imaginalOS.escapeHtml(item.cmd)}${comment}<br>`;
+        });
+
         window.imaginalOS.writeOutput(output);
     }
 
@@ -559,7 +518,7 @@
 
         let out = `${logo}`;
         out += `<span style="color: #50fa7b;">---------------------------------------------</span><br>`;
-        out += `<span class="neokey">OS:</span>          ImaginalOS v${window.imaginalOS.VERSION || '0.9.1'}-potato (Potato Battery Edition)<br>`;
+        out += `<span class="neokey">OS:</span>          ImaginalOS v${window.imaginalOS.VERSION}-potato (Potato Battery Edition)<br>`;
         out += `<span class="neokey">Host:</span>        imaginal.dev<br>`;
         out += `<span class="neokey">Uptime:</span>      ${Math.round(performance.now() / 1000)} seconds<br>`;
         out += `<span class="neokey">Shell:</span>       bush v0.9-glitch<br>`;
@@ -594,11 +553,11 @@
                     setTimeout(() => {
                         window.imaginalOS.playBeepSound(1200, 0.15, 'sine');
                         
-                        let motionPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Reduced Motion' : 'No Preferences';
-                        let touchPoints = navigator.maxTouchPoints || 0;
-                        let colorDepth = screen.colorDepth || 24;
-                        let orientation = (screen.orientation && screen.orientation.type) || 'N/A';
-                        let userLanguages = (navigator.languages && navigator.languages.join(', ')) || navigator.language || 'en-US';
+                        const motionPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Reduced Motion' : 'No Preferences';
+                        const touchPoints = navigator.maxTouchPoints || 0;
+                        const colorDepth = screen.colorDepth || 24;
+                        const orientation = (screen.orientation && screen.orientation.type) || 'N/A';
+                        const userLanguages = (navigator.languages && navigator.languages.join(', ')) || navigator.language || 'en-US';
 
                         let out = `<span class="secret-title">=== SECURITY BREACH: USER METRICS PROFILE ===</span><br>`;
                         out += `IP Address:             ${td.ip}<br>`;
@@ -636,33 +595,21 @@
         }, 400);
     }
 
+    // Scene type -> glyph shown in the report header. The type itself comes
+    // from the shared WMO mapping in telemetry.js.
+    const WEATHER_EMOJI = {
+        clear: '☀️', clouds: '☁️', rain: '🌧️', snow: '❄️', storm: '⛈️'
+    };
+
     async function runWeather() {
         const td = window.telemetryData;
-        let emoji = '🌫️';
-        let type = 'unknown';
-        const wc = td.weatherCode;
-        
-        if (wc === 0) {
-            emoji = '☀️';
-            type = 'clear';
-        } else if (wc >= 1 && wc <= 3) {
-            emoji = '☁️';
-            type = 'clouds';
-        } else if (wc >= 51 && wc <= 67) {
-            emoji = '🌧️';
-            type = 'rain';
-        } else if (wc >= 71 && wc <= 77) {
-            emoji = '❄️';
-            type = 'snow';
-        } else if (wc >= 95) {
-            emoji = '⛈️';
-            type = 'storm';
-        }
+        const type = window.imaginalOS.describeWeatherCode(td.weatherCode).type;
+        const emoji = WEATHER_EMOJI[type] || '🌫️';
 
-        let out = `Weather Report for <span class="pth">${td.city}, ${td.country}</span>:<br>`;
+        let out = `Weather Report for <span class="pth">${window.imaginalOS.escapeHtml(td.city)}, ${window.imaginalOS.escapeHtml(td.country)}</span>:<br>`;
         out += `<span style="font-size: 3.5rem; display: block; margin: 10px 0; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));">${emoji}</span>`;
-        out += `Condition:          ${td.weatherText}<br>`;
-        out += `Temperature:        ${td.temperature}<br>`;
+        out += `Condition:          ${window.imaginalOS.escapeHtml(td.weatherText)}<br>`;
+        out += `Temperature:        ${window.imaginalOS.escapeHtml(td.temperature)}<br>`;
         out += `Wind Speed:         ${td.windspeed}<br>`;
         out += `Coordinates:        ${td.lat}, ${td.lon}<br>`;
         
@@ -834,7 +781,7 @@ Keep crafting excellent software!
             ? quotes[Math.floor(Math.random() * quotes.length)]
             : "Here is your password.";
             
-        let out = `🔑 <span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${quote}"<br>` +
+        const out = `🔑 <span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${quote}"<br>` +
                   `Generated Password (${len} chars): <span class="secret">${window.imaginalOS.escapeHtml(pass)}</span><br>`;
         await writeTyped(out, 2);
     }
@@ -865,29 +812,34 @@ Keep crafting excellent software!
     }
 
     function runHelp() {
-        const commands = window.imaginalOS.HELP_COMMANDS;
-
         let html = "Available Commands:<br>";
-        for (let cmd of commands) {
-            html += `<div class="help-row"><span class="cmd">${cmd.name}</span><span class="help-desc">${cmd.desc}</span></div>`;
+        for (const cmd of window.imaginalOS.COMMANDS) {
+            const name = window.imaginalOS.formatCommandName(cmd);
+            html += `<div class="help-row"><span class="cmd">${name}</span><span class="help-desc">${cmd.desc}</span></div>`;
         }
         window.imaginalOS.writeOutput(html);
     }
 
     function runMan(arg = '') {
         if (!arg) {
+            const documented = window.imaginalOS.COMMANDS
+                .filter(c => MAN_PAGES[c.name])
+                .map(c => c.name);
+            const columns = 4;
+            const rows = [];
+            for (let i = 0; i < documented.length; i += columns) {
+                rows.push('  ' + documented.slice(i, i + columns).map(n => n.padEnd(12)).join('').trimEnd());
+            }
+
             window.imaginalOS.writeOutput(`
 <span class="cmd">imaginalOS Manual (imaginalOS)</span>
 --------------------------------------------------
-imaginalOS is a web-based portfolio simulation environment modeled after retro-futuristic unix terminals. 
+imaginalOS is a web-based portfolio simulation environment modeled after retro-futuristic unix terminals.
 It provides directory traversal, VFS writes, real-time environment overrides, and network telemetry analysis.
 
 Use '<span class="cmd">man &lt;command&gt;</span>' to view manual entries for specific commands.
-Available commands:
-  bmo, cat, cd, clear, cookie, date, echo, exit, git, gpg,
-  harvester, history, ip, ls, man, matrix, mkdir, mute,
-  open, pass, policy, pwd, rm, secret, touch, uname,
-  unmute, vim, weather, whoami
+Documented commands:
+${rows.join('\n')}
 <br>`);
             return;
         }
@@ -1044,22 +996,27 @@ Available commands:
     }
 
     function xorDecipher(hex, key) {
+        if (!key) throw new Error('missing key');
+        if (hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) {
+            throw new Error('ciphertext is not a hex string');
+        }
+
         let result = '';
         for (let i = 0; i < hex.length; i += 2) {
             const hexByte = parseInt(hex.substring(i, i + 2), 16);
             const keyChar = key.charCodeAt((i / 2) % key.length);
-            const deciphered = hexByte ^ keyChar;
-            result += String.fromCharCode(deciphered);
+            result += String.fromCharCode(hexByte ^ keyChar);
         }
         return result;
     }
+
     async function runCookies() {
         await writeTyped(window.imaginalOS.COOKIE_POLICY_TEXT, 3);
     }
 
     function runPolicy() {
         const laws = window.imaginalOS.GALACTIC_POLICIES;
-        
+
         let out = `⚖️ <span class="secret-title">[GALACTIC TOS & POLICIES]</span><br>`;
         out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         for (let i = 0; i < laws.length; i++) {
@@ -1068,87 +1025,193 @@ Available commands:
         window.imaginalOS.writeOutput(out + `<br>`);
     }
 
-    let activeTypingInterrupt = null;
+    function runNano() {
+        window.imaginalOS.playBeepSound(300, 0.1, 'sine');
+        window.imaginalOS.writeOutput(`<span class="err">nano: command not found.</span> Did you mean <span class="cmd">'banano'</span>? 🍌<br>`);
+    }
 
+    function runDate() {
+        const td = window.telemetryData;
+        let out = new Date().toString() + '<br>';
+        if (td.sunrise && td.sunset) {
+            out += `☀️ <b>Solar Ephemeris for ${window.imaginalOS.escapeHtml(td.city)}:</b><br>`;
+            out += `   Sunrise: <span class="neokey">${td.sunrise}</span> (local time)<br>`;
+            out += `   Sunset:  <span class="neokey">${td.sunset}</span> (local time)<br>`;
+        }
+        window.imaginalOS.writeOutput(out);
+    }
+
+    function runMute(muted) {
+        window.audioSynthMuted = muted;
+        window.imaginalOS.writeOutput(`Terminal audio effects ${muted ? 'MUTED' : 'UNMUTED'}.<br>`);
+    }
+
+    function runGame() {
+        if (!window.imaginalOS.runSpaceRock) {
+            window.imaginalOS.writeOutput("<span class='err'>game: failed to load game module</span><br>");
+            return;
+        }
+        window.imaginalOS.runSpaceRock();
+    }
+
+    function runWeatherOverride(type) {
+        if (window.imaginalOS.setWeatherOverride(type)) {
+            window.imaginalOS.writeOutput(`Weather override activated: <span class="cmd">${window.imaginalOS.escapeHtml(type)}</span><br>`);
+        } else {
+            const valid = window.imaginalOS.WEATHER_TYPES.join(', ');
+            window.imaginalOS.writeOutput(`<span class="err">Invalid weather type. Choose from: ${valid}.</span><br>`);
+        }
+    }
+
+    async function runExternalLink(emoji, label, url) {
+        await writeTyped(`${emoji} <span class="secret-title">[${label} REDIRECT]</span><br>Establishing secure link: <span class="cmd">${url}</span><br>`, 5);
+        window.open(url, '_blank', 'noopener');
+    }
+
+    function runGit() {
+        return runExternalLink('🐱', 'GITHUB', 'https://github.com/credimusin');
+    }
+
+    function runTelegram() {
+        return runExternalLink('✈️', 'TELEGRAM', 'https://t.me/credimusin');
+    }
+
+    const SUDO_PASSWORDS = ['love', 'admin', 'bmo'];
+    let sudoAttempts = 0;
+
+    function refreshPrompt() {
+        const symbol = window.imaginalOS.terminalPromptSymbol;
+        if (symbol) {
+            symbol.innerHTML = window.imaginalOS.getPromptString();
+        }
+    }
+
+    async function runSudo(args) {
+        if (args.join(' ').includes('rm -rf')) {
+            window.imaginalOS.runDestruct();
+            return;
+        }
+
+        sudoAttempts = 0;
+        window.imaginalOS.shellState = 'sudo_password';
+        refreshPrompt();
+        await writeTyped(`🔐 <span class="secret-title">[SUPERUSER SECURITY CHECK]</span><br>System authentication requested. (Secret password hint: <span class="file">bmo</span>)<br>`, 6);
+    }
+
+    function submitSudoPassword(pwd) {
+        const os = window.imaginalOS;
+        os.writeOutput(os.getPromptString() + '*'.repeat(pwd.length) + '<br>');
+
+        if (SUDO_PASSWORDS.includes(pwd.toLowerCase())) {
+            os.shellState = 'normal';
+            os.playBeepSound(700, 0.1, 'sine');
+            os.writeOutput("<span class='cmd'>Access Granted. You are temporarily root. Type 'rm -rf /' to reboot.</span><br>");
+        } else if (++sudoAttempts >= 3) {
+            sudoAttempts = 0;
+            os.shellState = 'normal';
+            os.playBeepSound(250, 0.2, 'sawtooth');
+            os.writeOutput("<span class='err'>sudo: 3 incorrect password attempts. Incidents reported. Locking shell.</span><br>");
+        } else {
+            os.playBeepSound(300, 0.15, 'sawtooth');
+            os.writeOutput("<span class='err'>Sorry, try again.</span><br>");
+        }
+
+        refreshPrompt();
+    }
+
+    let activeTypingCancel = null;
+
+    // Reveals `html` inside `element` character by character. Any keypress or
+    // click skips to the end, and starting a new reveal cancels the previous
+    // one outright - otherwise two typewriters fight over the input field.
     function typeHtml(element, html, speed = 8, callback) {
-        if (activeTypingInterrupt) {
-            activeTypingInterrupt();
+        if (activeTypingCancel) {
+            activeTypingCancel();
         }
 
         element.innerHTML = html;
-        
+
         const textNodes = [];
-        function collectTextNodes(node) {
+        (function collectTextNodes(node) {
             if (node.nodeType === Node.TEXT_NODE) {
-                textNodes.push({
-                    node: node,
-                    originalText: node.nodeValue
-                });
+                textNodes.push({ node, originalText: node.nodeValue });
                 node.nodeValue = '';
-            } else {
-                for (let i = 0; i < node.childNodes.length; i++) {
-                    collectTextNodes(node.childNodes[i]);
-                }
+                return;
             }
-        }
-        collectTextNodes(element);
-        
+            for (let i = 0; i < node.childNodes.length; i++) {
+                collectTextNodes(node.childNodes[i]);
+            }
+        })(element);
+
         let nodeIndex = 0;
         let charIndex = 0;
-        let skip = false;
-        
+        let cancelled = false;
+        let skipToEnd = false;
+
         const handleInterrupt = () => {
-            skip = true;
+            skipToEnd = true;
         };
-        
+
         let listenersRegistered = false;
         const registerTimeout = setTimeout(() => {
             window.addEventListener('keydown', handleInterrupt);
             window.addEventListener('click', handleInterrupt);
             listenersRegistered = true;
         }, 100);
-        
-        function cleanup() {
+
+        function finish() {
             clearTimeout(registerTimeout);
             if (listenersRegistered) {
                 window.removeEventListener('keydown', handleInterrupt);
                 window.removeEventListener('click', handleInterrupt);
             }
-            activeTypingInterrupt = null;
+            if (activeTypingCancel === cancel) {
+                activeTypingCancel = null;
+            }
+            if (callback) callback();
         }
 
-        activeTypingInterrupt = cleanup;
-        
+        function revealRemaining() {
+            for (let i = nodeIndex; i < textNodes.length; i++) {
+                textNodes[i].node.nodeValue = textNodes[i].originalText;
+            }
+        }
+
+        function cancel() {
+            cancelled = true;
+            revealRemaining();
+            finish();
+        }
+
+        activeTypingCancel = cancel;
+
         function step() {
-            if (skip) {
-                for (let i = nodeIndex; i < textNodes.length; i++) {
-                    const nodeInfo = textNodes[i];
-                    nodeInfo.node.nodeValue = nodeInfo.originalText;
-                }
-                cleanup();
-                if (callback) callback();
+            if (cancelled) return;
+
+            if (skipToEnd) {
+                revealRemaining();
+                finish();
                 return;
             }
 
             if (nodeIndex >= textNodes.length) {
-                cleanup();
-                if (callback) callback();
+                finish();
                 return;
             }
-            
+
             const current = textNodes[nodeIndex];
             if (charIndex < current.originalText.length) {
                 current.node.nodeValue += current.originalText[charIndex];
                 charIndex++;
-                
+
                 if (Math.random() < 0.25 && window.playKeySound) {
                     window.playKeySound();
                 }
-                
+
                 if (window.imaginalOS.terminalOutput) {
                     window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
                 }
-                
+
                 setTimeout(step, speed);
             } else {
                 nodeIndex++;
@@ -1156,7 +1219,7 @@ Available commands:
                 step();
             }
         }
-        
+
         step();
     }
 
@@ -1286,7 +1349,7 @@ Available commands:
 
     async function runUname(arg = '') {
         const flag = arg ? arg.toLowerCase() : '';
-        const version = (window.imaginalOS.VERSION || '0.9.1') + '-potato';
+        const version = window.imaginalOS.VERSION + '-potato';
         let out = '';
         if (flag === '-a' || flag === '--all') {
             out = `ImaginalOS ${version} #1 SMP Sat Dec 24 12:34:34 UTC 2022 x86_64 GNU/Bimux (BMO-Core-v4.2, Battery Power: 100%, Crumbs: 2%)<br>`;
@@ -1351,6 +1414,28 @@ Available commands:
         return escaped;
     }
 
+    // Header lines are user input and go straight into fetch(), which throws
+    // on anything that is not a valid header name/value pair.
+    function parseHeaderLine(line) {
+        const idx = line.indexOf(':');
+        if (idx <= 0) return null;
+        const name = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+        if (!/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(name)) return null;
+        return [name, value];
+    }
+
+    let curlResponsesCache = null;
+    function getCurlResponses() {
+        if (!curlResponsesCache) {
+            curlResponsesCache = fetch('/static/js/curl_responses.json')
+                .then(res => (res.ok ? res.json() : null))
+                .catch(() => null)
+                .then(data => data || { coffee: '', tea: '', homepage: '' });
+        }
+        return curlResponsesCache;
+    }
+
     async function runCurl(args = []) {
         if (args.length === 0) {
             window.imaginalOS.writeOutput(`curl: try 'curl --help' for more information<br>`);
@@ -1360,7 +1445,7 @@ Available commands:
         let isHead = false;
         let isVerbose = false;
         let url = '';
-        let headers = [];
+        const headers = [];
 
         for (let i = 0; i < args.length; i++) {
             const arg = args[i];
@@ -1370,6 +1455,11 @@ Available commands:
                 isVerbose = true;
             } else if (arg === '-H' || arg === '--header') {
                 if (i + 1 < args.length) {
+                    const parsed = parseHeaderLine(args[i + 1]);
+                    if (!parsed) {
+                        window.imaginalOS.writeOutput(`<span class="err">curl: invalid header: ${window.imaginalOS.escapeHtml(args[i + 1])}</span><br>`);
+                        return;
+                    }
                     headers.push(args[i + 1]);
                     i++;
                 }
@@ -1386,7 +1476,7 @@ Available commands:
             return;
         }
 
-        let cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '').toLowerCase();
+        const cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '').toLowerCase();
         let targetPath = '';
         let isLocal = false;
 
@@ -1395,7 +1485,7 @@ Available commands:
 
         if (isImaginal || cleanUrl === '') {
             isLocal = true;
-            let pathMatch = url.match(/^(https?:\/\/[^/]+)?(\/.*)?$/);
+            const pathMatch = url.match(/^(https?:\/\/[^/]+)?(\/.*)?$/);
             targetPath = (pathMatch && pathMatch[2]) ? pathMatch[2] : '/';
         }
 
@@ -1413,15 +1503,11 @@ Available commands:
 
         try {
             if (isLocal) {
-                const fetchHeaders = {
-                    'X-Imaginal-Curl': 'true'
-                };
-                headers.forEach(h => {
-                    const parts = h.split(':');
-                    if (parts.length >= 2) {
-                        fetchHeaders[parts[0].trim()] = parts.slice(1).join(':').trim();
-                    }
-                });
+                const fetchHeaders = { 'X-Imaginal-Curl': 'true' };
+                for (const h of headers) {
+                    const parsed = parseHeaderLine(h);
+                    fetchHeaders[parsed[0]] = parsed[1];
+                }
 
                 const response = await fetch(targetPath, {
                     method: isHead ? 'HEAD' : 'GET',
@@ -1433,7 +1519,7 @@ Available commands:
                     `date: ${dateStr}`,
                     `content-type: ${response.headers.get('content-type') || 'text/plain; charset=utf-8'}`,
                     `x-developer: BMO`,
-                    `x-bmo-system: imaginalOS-v${window.imaginalOS.VERSION || '0.9.1'}`,
+                    `x-bmo-system: imaginalOS-v${window.imaginalOS.VERSION}`,
                     `x-clacks-overhead: GNU Terry Pratchett`,
                     `server: cloudflare`
                 ];
@@ -1455,14 +1541,7 @@ Available commands:
                 }
 
                 const text = await response.text();
-
-                let curlResponses = { coffee: "", tea: "", homepage: "" };
-                try {
-                    const curlRes = await fetch('/static/js/curl_responses.json');
-                    if (curlRes.ok) {
-                        curlResponses = await curlRes.json();
-                    }
-                } catch {}
+                const curlResponses = await getCurlResponses();
 
                 // Local fallback for /coffee, /teapot, /tea when functions/_middleware.js is not active locally
                 if (response.status === 404) {
@@ -1477,8 +1556,7 @@ Available commands:
                 }
 
                 if (text.trim().startsWith('<!DOCTYPE html>') && (targetPath === '/' || targetPath === '')) {
-                    const version = window.imaginalOS.VERSION || '0.9.1';
-                    const localAnsi = curlResponses.homepage.replace(/\${version}/g, version);
+                    const localAnsi = curlResponses.homepage.replace(/\${version}/g, window.imaginalOS.VERSION);
                     await writeTyped(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(localAnsi)}</pre>`, 2);
                 } else {
                     await writeTyped(`<pre style="font-family: monospace; line-height: 1.2;">${ansiToHtml(text)}</pre>`, 2);
@@ -1503,40 +1581,48 @@ Available commands:
     }
 
     // Expose on namespace
-    window.imaginalOS = window.imaginalOS || {};
-    window.imaginalOS.HINTS = HINTS;
-    window.imaginalOS.runLs = runLs;
-    window.imaginalOS.runCd = runCd;
-    window.imaginalOS.runGpg = runGpg;
-    window.imaginalOS.runCurl = runCurl;
-    window.imaginalOS.runCat = runCat;
-    window.imaginalOS.runPwd = runPwd;
-    window.imaginalOS.runUname = runUname;
-    window.imaginalOS.runMkdir = runMkdir;
-    window.imaginalOS.runTouch = runTouch;
-    window.imaginalOS.runRm = runRm;
-    window.imaginalOS.runHistory = runHistory;
-    window.imaginalOS.runOpen = runOpen;
-    window.imaginalOS.runIp = runIp;
-    window.imaginalOS.runWhoami = runWhoami;
-    window.imaginalOS.writeTyped = writeTyped;
-    window.imaginalOS.runNeofetch = runNeofetch;
-    window.imaginalOS.runHarvester = runHarvester;
-    window.imaginalOS.runWeather = runWeather;
-    window.imaginalOS.runBmoEasterEgg = runBmoEasterEgg;
-    window.imaginalOS.runSecretCheck = runSecretCheck;
-    window.imaginalOS.runPass = runPass;
-    window.imaginalOS.runHelp = runHelp;
-    window.imaginalOS.runMan = runMan;
-    window.imaginalOS.runCookies = runCookies;
-    window.imaginalOS.runPolicy = runPolicy;
-    window.imaginalOS.runTime = runTime;
-    window.imaginalOS.runTips = runTips;
-    window.imaginalOS.animateEchoBanner = animateEchoBanner;
-    window.imaginalOS.startMatrix = startMatrix;
-    window.imaginalOS.stopMatrix = stopMatrix;
-    window.imaginalOS.runDestruct = runDestruct;
-    window.imaginalOS.isMatrixActive = () => isMatrixActive;
-    window.imaginalOS.xorCipher = xorCipher;
-    window.imaginalOS.xorDecipher = xorDecipher;
+    const ns = window.imaginalOS;
+    ns.runLs = runLs;
+    ns.runCd = runCd;
+    ns.runCat = runCat;
+    ns.runMkdir = runMkdir;
+    ns.runTouch = runTouch;
+    ns.runRm = runRm;
+    ns.runGpg = runGpg;
+    ns.runCurl = runCurl;
+    ns.runPwd = runPwd;
+    ns.runUname = runUname;
+    ns.runTime = runTime;
+    ns.runTips = runTips;
+    ns.runWhoami = runWhoami;
+    ns.runNeofetch = runNeofetch;
+    ns.runHarvester = runHarvester;
+    ns.runWeather = runWeather;
+    ns.runWeatherOverride = runWeatherOverride;
+    ns.runBmoEasterEgg = runBmoEasterEgg;
+    ns.runSecretCheck = runSecretCheck;
+    ns.runPass = runPass;
+    ns.runHelp = runHelp;
+    ns.runMan = runMan;
+    ns.runCookies = runCookies;
+    ns.runPolicy = runPolicy;
+    ns.runHistory = runHistory;
+    ns.runOpen = runOpen;
+    ns.runIp = runIp;
+    ns.runNano = runNano;
+    ns.runDate = runDate;
+    ns.runMute = runMute;
+    ns.runGame = runGame;
+    ns.runGit = runGit;
+    ns.runTelegram = runTelegram;
+    ns.runSudo = runSudo;
+    ns.submitSudoPassword = submitSudoPassword;
+    ns.runDestruct = runDestruct;
+    ns.animateEchoBanner = animateEchoBanner;
+    ns.writeTyped = writeTyped;
+    ns.startMatrix = startMatrix;
+    ns.stopMatrix = stopMatrix;
+    ns.isMatrixActive = () => isMatrixActive;
+    ns.xorCipher = xorCipher;
+    ns.xorDecipher = xorDecipher;
 })();

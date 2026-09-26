@@ -8,6 +8,45 @@
     let currentWeather = 'clear'; // 'clear', 'clouds', 'rain', 'snow', 'storm'
     window.windVector = { x: 1.0, y: 0.0 };
 
+    // Local solar clock used by every sky, star and cloud calculation.
+    const DAY_START = 5.0;
+    const DAY_END = 20.5;
+    const DUSK_START = 18.5;
+    const DUSK_END = 20.5;
+    const DAWN_END = 7.0;
+
+    const WEATHER_TYPES = ['clear', 'clouds', 'rain', 'snow', 'storm'];
+    const SEASON_TYPES = ['spring', 'summer', 'autumn', 'winter'];
+
+    // Cloud size/opacity per weather type. Storm fronts are bigger and denser.
+    const CLOUD_LOOK = {
+        storm: { scaleBase: 180, scaleRange: 120, opacityBase: 0.9, opacityRange: 0.1 },
+        rain: { scaleBase: 140, scaleRange: 100, opacityBase: 0.85, opacityRange: 0.1 }
+    };
+    const DEFAULT_CLOUD_LOOK = { scaleBase: 110, scaleRange: 90, opacityBase: 0.82, opacityRange: 0.1 };
+
+    // Particles per active weather/season type.
+    const PARTICLE_COUNTS = { rain: 100, storm: 180, snow: 90, summer: 35 };
+    let activeParticleType = null;
+
+    // Hour of day as a float, e.g. 20.75 for 20:45. Cheap enough to call per
+    // frame, unlike allocating a Date.
+    function currentLocalHour() {
+        return currentHourOf(new Date());
+    }
+
+    function currentHourOf(date) {
+        return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+    }
+
+    function cloudTargetFor(type) {
+        const look = CLOUD_LOOK[type] || DEFAULT_CLOUD_LOOK;
+        return {
+            targetScale: look.scaleBase + Math.random() * look.scaleRange,
+            targetOpacity: look.opacityBase + Math.random() * look.opacityRange
+        };
+    }
+
     const CONSTELLATIONS = [
         {
             name: "Ursa Major",
@@ -170,7 +209,7 @@
     let constellationTimer = 0;
     let nextConstellationTime = Date.now() + 6000;
 
-    let shootingStars = [];
+    const shootingStars = [];
     let cloudsArray = [];
 
     const EASTER_EGG_SHAPES = [
@@ -323,7 +362,7 @@
         return rgbToHex(r, g, b);
     }
 
-    window.updateSkyAndStars = function(hour) {
+    window.imaginalOS.updateSkyAndStars = function(hour) {
         let currentStop = skyGradients[skyGradients.length - 1];
         let nextStop = skyGradients[0];
         
@@ -359,12 +398,12 @@
         document.documentElement.style.setProperty('--sky-bot', skyBot);
         
         let starsOpacity = 0;
-        if (hour >= 20.5 || hour < 5.0) {
+        if (hour >= DAY_END || hour < DAY_START) {
             starsOpacity = 1;
-        } else if (hour >= 18.5 && hour < 20.5) {
-            starsOpacity = (hour - 18.5) / 2;
-        } else if (hour >= 5.0 && hour < 7.0) {
-            starsOpacity = 1 - (hour - 5.0) / 2;
+        } else if (hour >= DUSK_START && hour < DUSK_END) {
+            starsOpacity = (hour - DUSK_START) / (DUSK_END - DUSK_START);
+        } else if (hour >= DAY_START && hour < DAWN_END) {
+            starsOpacity = 1 - (hour - DAY_START) / (DAWN_END - DAY_START);
         }
         
         const s1 = document.getElementById('stars');
@@ -406,22 +445,38 @@
     ];
     const MOON_PHASE_ILLUM = [0, 25, 50, 75, 100, 75, 50, 25];
 
+    const MOON_CRATERS = [
+        { cx: 32, cy: 35, r: 4.5 }, { cx: 58, cy: 55, r: 6 },
+        { cx: 28, cy: 55, r: 3 }, { cx: 48, cy: 65, r: 5 },
+        { cx: 50, cy: 25, r: 3.5 }, { cx: 62, cy: 35, r: 4 },
+        { cx: 38, cy: 45, r: 3 }
+    ];
+
+    // Rendered twice per sky tick, so mask ids have to be unique: otherwise the
+    // browser keeps resolving url(#...) to the very first one in the document.
+    let moonRenderCount = 0;
+
+    function moonCraters(maskId, opacity) {
+        const craters = MOON_CRATERS.map(c => `<circle cx="${c.cx}" cy="${c.cy}" r="${c.r}" fill="#000" />`).join('');
+        return `<g mask="url(#${maskId})" opacity="${opacity}">${craters}</g>`;
+    }
+
     function getMoonSvg(phase) {
         const cx = 45, cy = 45, r = 45;
         let rx = r, sweepOuter = 1, sweepTerminator = 1;
-        
+
+        moonRenderCount++;
+        const diskMask = `moon-disk-${moonRenderCount}`;
+        const lightMask = `moon-light-${moonRenderCount}`;
+
         if (phase === 0) {
             return `<svg width="100%" height="100%" viewBox="0 0 90 90">
-                <defs><mask id="disk-mask"><circle cx="${cx}" cy="${cy}" r="${r}" fill="white" /></mask></defs>
+                <defs><mask id="${diskMask}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="white" /></mask></defs>
                 <circle cx="${cx}" cy="${cy}" r="${r}" fill="#161e30" stroke="rgba(255,255,255,0.05)" />
-                <g mask="url(#disk-mask)" opacity="0.12">
-                    <circle cx="32" cy="35" r="4.5" fill="#000" /><circle cx="58" cy="55" r="6" fill="#000" />
-                    <circle cx="28" cy="55" r="3" fill="#000" /><circle cx="48" cy="65" r="5" fill="#000" />
-                    <circle cx="50" cy="25" r="3.5" fill="#000" />
-                </g>
+                ${moonCraters(diskMask, 0.12)}
             </svg>`;
         }
-        
+
         switch(phase) {
             case 1: rx = r * 0.55; sweepOuter = 1; sweepTerminator = 1; break;
             case 2: rx = r * 0.25; sweepOuter = 1; sweepTerminator = 0; break;
@@ -433,35 +488,22 @@
         }
         
         const lightPath = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweepOuter} ${cx} ${cy + r} A ${rx} ${r} 0 0 ${sweepTerminator} ${cx} ${cy - r}`;
-                           
+
         return `<svg width="100%" height="100%" viewBox="0 0 90 90">
             <defs>
-                <mask id="light-mask"><rect x="0" y="0" width="90" height="90" fill="black" /><path d="${lightPath}" fill="white" /></mask>
-                <mask id="disk-mask"><circle cx="${cx}" cy="${cy}" r="${r}" fill="white" /></mask>
+                <mask id="${lightMask}"><rect x="0" y="0" width="90" height="90" fill="black" /><path d="${lightPath}" fill="white" /></mask>
+                <mask id="${diskMask}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="white" /></mask>
             </defs>
             <circle cx="${cx}" cy="${cy}" r="${r}" fill="#161e30" />
-            <g mask="url(#disk-mask)" opacity="0.14">
-                <circle cx="32" cy="35" r="4.5" fill="#000" /><circle cx="58" cy="55" r="6" fill="#000" />
-                <circle cx="28" cy="55" r="3" fill="#000" /><circle cx="48" cy="65" r="5" fill="#000" />
-                <circle cx="50" cy="25" r="3.5" fill="#000" /><circle cx="62" cy="35" r="4" fill="#000" />
-                <circle cx="38" cy="45" r="3" fill="#000" />
-            </g>
+            ${moonCraters(diskMask, 0.14)}
             <path d="${lightPath}" fill="#f5f6f8" />
-            <g mask="url(#light-mask)" opacity="0.12">
-                <circle cx="32" cy="35" r="4.5" fill="#000" /><circle cx="58" cy="55" r="6" fill="#000" />
-                <circle cx="28" cy="55" r="3" fill="#000" /><circle cx="48" cy="65" r="5" fill="#000" />
-                <circle cx="50" cy="25" r="3.5" fill="#000" /><circle cx="62" cy="35" r="4" fill="#000" />
-                <circle cx="38" cy="45" r="3" fill="#000" />
-            </g>
+            ${moonCraters(lightMask, 0.12)}
         </svg>`;
     }
 
     function getCelestialInfo() {
         const now = new Date();
-        const currentHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-        const startSun = 5.0;
-        const endSun = 20.5;
-        const isDay = currentHour >= startSun && currentHour < endSun;
+        const isDay = currentHourOf(now) >= DAY_START && currentHourOf(now) < DAY_END;
 
         if (isDay) {
             const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
@@ -495,7 +537,7 @@
         }
     }
 
-    window.updateCelestial = function(hour) {
+    window.imaginalOS.updateCelestial = function(hour) {
         const mainDiv = document.querySelector('.main');
         if (!mainDiv) return;
         
@@ -506,24 +548,21 @@
             mainDiv.insertBefore(bodyEl, mainDiv.firstChild);
         }
         
-        const startSun = 5.0;
-        const endSun = 20.5;
-        let isDay = hour >= startSun && hour < endSun;
+        const isDay = hour >= DAY_START && hour < DAY_END;
         let t;
-        
+
         if (isDay) {
             bodyEl.classList.remove('moon');
             bodyEl.classList.add('sun');
             bodyEl.innerHTML = '';
-            t = (hour - startSun) / (endSun - startSun);
+            t = (hour - DAY_START) / (DAY_END - DAY_START);
         } else {
             bodyEl.classList.remove('sun');
             bodyEl.classList.add('moon');
-            if (hour >= endSun) {
-                t = (hour - endSun) / (24 - endSun + startSun);
-            } else {
-                t = (hour + (24 - endSun)) / (24 - endSun + startSun);
-            }
+            const nightLength = 24 - DAY_END + DAY_START;
+            t = hour >= DAY_END
+                ? (hour - DAY_END) / nightLength
+                : (hour + (24 - DAY_END)) / nightLength;
             const now = new Date();
             const phase = getMoonPhase(now.getFullYear(), now.getMonth() + 1, now.getDate());
             bodyEl.innerHTML = getMoonSvg(phase);
@@ -618,55 +657,61 @@
 
     function onWeatherChange(type) {
         cloudsArray.forEach(c => {
-            let scaleBase = 110, scaleRange = 90;
-            let opacityBase = 0.82, opacityRange = 0.1;
-            if (type === 'storm') {
-                scaleBase = 180; scaleRange = 120;
-                opacityBase = 0.9; opacityRange = 0.1;
-            } else if (type === 'rain') {
-                scaleBase = 140; scaleRange = 100;
-                opacityBase = 0.85; opacityRange = 0.1;
-            }
-            c.targetScale = scaleBase + Math.random() * scaleRange;
-            c.targetOpacity = opacityBase + Math.random() * opacityRange;
+            Object.assign(c, cloudTargetFor(type));
         });
     }
 
-    function updateAndDrawClouds(maxAlpha, hour) {
-        let desiredClouds = 0;
-        let isStorm = (currentWeather === 'storm');
-        if (currentWeather === 'clouds') desiredClouds = 12;
-        else if (currentWeather === 'rain') desiredClouds = 16;
-        else if (currentWeather === 'storm') desiredClouds = 24;
-        else if (currentWeather === 'snow') desiredClouds = 10;
-        
+    // Cloud tint follows the same clock as the sky: dark at night, warm at
+    // dusk, cold at dawn, near-black during a storm.
+    function cloudTintFor(hour) {
+        if (currentWeather === 'storm') return { r: 12, g: 15, b: 22 };
+        if (hour >= DAY_END || hour < DAY_START) return { r: 10, g: 14, b: 24 };
+
+        const blend = (from, to, t) => Math.round(from * (1 - t) + to * t);
+        if (hour >= DUSK_START && hour < DUSK_END) {
+            const t = (hour - DUSK_START) / (DUSK_END - DUSK_START);
+            return { r: blend(240, 15, t), g: blend(147, 10, t), b: blend(169, 20, t) };
+        }
+        if (hour >= DAY_START && hour < DAWN_END) {
+            const t = (hour - DAY_START) / (DAWN_END - DAY_START);
+            return { r: blend(15, 240, t), g: blend(10, 243, t), b: blend(20, 244, t) };
+        }
+        return { r: 240, g: 243, b: 244 };
+    }
+
+    function respawnCloud(c) {
+        c.x = c.x > 0 ? -c.scale : canvas.width + c.scale;
+        c.y = 30 + Math.random() * 80;
+        Object.assign(c, cloudTargetFor(currentWeather));
+        c.scale = c.targetScale * 0.1;
+
+        if (!c.isEasterEgg) {
+            const puffs = generateNormalCloudPuffs(5 + Math.floor(Math.random() * 4));
+            c.currentPuffs = puffs.map(p => ({ ...p }));
+            c.targetPuffs = puffs.map(p => ({ ...p }));
+        }
+    }
+
+    function updateAndDrawClouds(hour) {
+        const desiredClouds = {
+            clouds: 12, rain: 16, storm: 24, snow: 10
+        }[currentWeather] || 0;
+
         if (desiredClouds === 0) {
             cloudsArray.forEach(c => { c.opacity -= 0.008; });
             cloudsArray = cloudsArray.filter(c => c.opacity > 0);
         } else {
             while (cloudsArray.length < desiredClouds) {
-                const numPuffs = 5 + Math.floor(Math.random() * 4);
-                const puffs = generateNormalCloudPuffs(numPuffs);
-                let scaleBase = 110, scaleRange = 90;
-                let opacityBase = 0.82, opacityRange = 0.1;
-                if (currentWeather === 'storm') {
-                    scaleBase = 180; scaleRange = 120;
-                    opacityBase = 0.9; opacityRange = 0.1;
-                } else if (currentWeather === 'rain') {
-                    scaleBase = 140; scaleRange = 100;
-                    opacityBase = 0.85; opacityRange = 0.1;
-                }
-                const targetScale = scaleBase + Math.random() * scaleRange;
-                const targetOpacity = opacityBase + Math.random() * opacityRange;
-
+                const puffs = generateNormalCloudPuffs(5 + Math.floor(Math.random() * 4));
+                const target = cloudTargetFor(currentWeather);
                 cloudsArray.push({
                     x: Math.random() * canvas.width * 1.2 - canvas.width * 0.1,
                     y: 30 + Math.random() * 80,
-                    scale: targetScale * 0.1,
-                    targetScale: targetScale,
+                    scale: target.targetScale * 0.1,
+                    targetScale: target.targetScale,
                     speed: 0.1 + Math.random() * 0.22,
                     opacity: 0,
-                    targetOpacity: targetOpacity,
+                    targetOpacity: target.targetOpacity,
                     currentPuffs: puffs.map(p => ({ ...p })),
                     targetPuffs: puffs.map(p => ({ ...p })),
                     isEasterEgg: false,
@@ -675,110 +720,31 @@
                 });
             }
         }
-        
-        if (Math.random() < 0.0006 && !cloudsArray.some(c => c.isEasterEgg) && cloudsArray.length > 0) {
-            const activeClouds = cloudsArray.filter(c => c.opacity > 0.4);
-            if (activeClouds.length > 0) {
-                const targetCloud = activeClouds[Math.floor(Math.random() * activeClouds.length)];
-                const egg = EASTER_EGG_SHAPES[Math.floor(Math.random() * EASTER_EGG_SHAPES.length)];
-                while (targetCloud.currentPuffs.length < egg.puffs.length) {
-                    targetCloud.currentPuffs.push({ dx: 0, dy: 0, r: 0.05 });
-                }
-                if (targetCloud.currentPuffs.length > egg.puffs.length) {
-                    targetCloud.currentPuffs = targetCloud.currentPuffs.slice(0, egg.puffs.length);
-                }
-                targetCloud.targetPuffs = egg.puffs.map(p => ({ ...p }));
-                targetCloud.isEasterEgg = true;
-                targetCloud.easterEggName = egg.name;
-                targetCloud.morphTimer = Date.now() + 25000;
-            }
-        }
-        
-        let r = 240, g = 243, b = 244;
-        if (isStorm) {
-            r = 12; g = 15; b = 22;
-        } else {
-            if (hour >= 20.5 || hour < 5.0) {
-                r = 10; g = 14; b = 24;
-            } else if (hour >= 18.5 && hour < 20.5) {
-                const t = (hour - 18.5) / 2.0;
-                r = Math.round(240 * (1 - t) + 15 * t);
-                g = Math.round(147 * (1 - t) + 10 * t);
-                b = Math.round(169 * (1 - t) + 20 * t);
-            } else if (hour >= 5.0 && hour < 7.0) {
-                const t = (hour - 5.0) / 2.0;
-                r = Math.round(15 * (1 - t) + 240 * t);
-                g = Math.round(10 * (1 - t) + 243 * t);
-                b = Math.round(20 * (1 - t) + 244 * t);
-            }
-        }
-        
+
+        morphEasterEggCloud();
+
+        const isStorm = currentWeather === 'storm';
+        const { r, g, b } = cloudTintFor(hour);
+
         ctx.save();
         cloudsArray.forEach(c => {
             c.x += c.speed * window.windVector.x;
             c.y += c.speed * window.windVector.y;
             c.scale += (c.targetScale - c.scale) * 0.015;
-            
-            if (window.windVector.x >= 0) {
-                if (c.x > canvas.width + c.scale) {
-                    c.x = -c.scale;
-                    c.y = 30 + Math.random() * 80;
-                    
-                    let scaleBase = 110, scaleRange = 90;
-                    let opacityBase = 0.82, opacityRange = 0.1;
-                    if (currentWeather === 'storm') {
-                        scaleBase = 180; scaleRange = 120;
-                        opacityBase = 0.9; opacityRange = 0.1;
-                    } else if (currentWeather === 'rain') {
-                        scaleBase = 140; scaleRange = 100;
-                        opacityBase = 0.85; opacityRange = 0.1;
-                    }
-                    c.targetScale = scaleBase + Math.random() * scaleRange;
-                    c.scale = c.targetScale * 0.1;
-                    c.targetOpacity = opacityBase + Math.random() * opacityRange;
-                    
-                    if (!c.isEasterEgg) {
-                        const numPuffs = 5 + Math.floor(Math.random() * 4);
-                        const puffs = generateNormalCloudPuffs(numPuffs);
-                        c.currentPuffs = puffs.map(p => ({ ...p }));
-                        c.targetPuffs = puffs.map(p => ({ ...p }));
-                    }
-                }
-            } else {
-                if (c.x < -c.scale) {
-                    c.x = canvas.width + c.scale;
-                    c.y = 30 + Math.random() * 80;
-                    
-                    let scaleBase = 110, scaleRange = 90;
-                    let opacityBase = 0.82, opacityRange = 0.1;
-                    if (currentWeather === 'storm') {
-                        scaleBase = 180; scaleRange = 120;
-                        opacityBase = 0.9; opacityRange = 0.1;
-                    } else if (currentWeather === 'rain') {
-                        scaleBase = 140; scaleRange = 100;
-                        opacityBase = 0.85; opacityRange = 0.1;
-                    }
-                    c.targetScale = scaleBase + Math.random() * scaleRange;
-                    c.scale = c.targetScale * 0.1;
-                    c.targetOpacity = opacityBase + Math.random() * opacityRange;
-                    
-                    if (!c.isEasterEgg) {
-                        const numPuffs = 5 + Math.floor(Math.random() * 4);
-                        const puffs = generateNormalCloudPuffs(numPuffs);
-                        c.currentPuffs = puffs.map(p => ({ ...p }));
-                        c.targetPuffs = puffs.map(p => ({ ...p }));
-                    }
-                }
+
+            const driftRight = window.windVector.x >= 0;
+            if ((driftRight && c.x > canvas.width + c.scale) || (!driftRight && c.x < -c.scale)) {
+                respawnCloud(c);
             }
-            
+
             if (c.y < 10) c.y = 10;
             if (c.y > canvas.height * 0.35) c.y = canvas.height * 0.35;
-            
+
             if (c.isEasterEgg && Date.now() > c.morphTimer) {
                 c.isEasterEgg = false;
                 c.targetPuffs = generateNormalCloudPuffs(c.currentPuffs.length);
             }
-            
+
             c.currentPuffs.forEach((p, idx) => {
                 const target = c.targetPuffs[idx];
                 if (target) {
@@ -787,14 +753,14 @@
                     p.r += (target.r - p.r) * 0.012;
                 }
             });
-            
+
             if (c.opacity < c.targetOpacity) c.opacity += 0.005;
-            
+
             if (c.opacity > 0.01) {
                 ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${c.opacity})`;
                 ctx.shadowBlur = isStorm ? 30 : 20;
                 ctx.shadowColor = isStorm ? 'rgba(5, 5, 10, 0.5)' : `rgba(${r}, ${g}, ${b}, 0.12)`;
-                
+
                 ctx.beginPath();
                 c.currentPuffs.forEach(p => {
                     const px = c.x + p.dx * c.scale;
@@ -809,14 +775,38 @@
         ctx.restore();
     }
 
+    // Rarely, one cloud reshapes itself into a BMO easter egg for a while.
+    function morphEasterEggCloud() {
+        if (Math.random() >= 0.0006 || cloudsArray.length === 0 || cloudsArray.some(c => c.isEasterEgg)) {
+            return;
+        }
+
+        const visible = cloudsArray.filter(c => c.opacity > 0.4);
+        if (visible.length === 0) return;
+
+        const targetCloud = visible[Math.floor(Math.random() * visible.length)];
+        const egg = EASTER_EGG_SHAPES[Math.floor(Math.random() * EASTER_EGG_SHAPES.length)];
+
+        while (targetCloud.currentPuffs.length < egg.puffs.length) {
+            targetCloud.currentPuffs.push({ dx: 0, dy: 0, r: 0.05 });
+        }
+        if (targetCloud.currentPuffs.length > egg.puffs.length) {
+            targetCloud.currentPuffs = targetCloud.currentPuffs.slice(0, egg.puffs.length);
+        }
+        targetCloud.targetPuffs = egg.puffs.map(p => ({ ...p }));
+        targetCloud.isEasterEgg = true;
+        targetCloud.easterEggName = egg.name;
+        targetCloud.morphTimer = Date.now() + 25000;
+    }
+
     function drawCanvasWaves(hour) {
         waveTime += 0.004;
         let baseColor = { r: 10, g: 25, b: 47 };
-        if (hour >= 5.0 && hour < 9.0) {
+        if (hour >= DAY_START && hour < 9.0) {
             baseColor = { r: 36, g: 15, b: 44 };
         } else if (hour >= 9.0 && hour < 17.0) {
             baseColor = { r: 15, g: 45, b: 70 };
-        } else if (hour >= 17.0 && hour < 20.5) {
+        } else if (hour >= 17.0 && hour < DAY_END) {
             baseColor = { r: 24, g: 12, b: 35 };
         }
         
@@ -991,7 +981,7 @@
         }
     }
 
-    let splashes = [];
+    const splashes = [];
     function createSplash(x, y) {
         splashes.push({
             x: x, y: y, r: 1, maxR: 4 + Math.random() * 6, opacity: 0.8, speed: 0.15 + Math.random() * 0.15
@@ -1018,7 +1008,7 @@
         }
     }
 
-    let mouse = { x: -1000, y: -1000 };
+    const mouse = { x: -1000, y: -1000 };
     window.addEventListener('mousemove', (e) => {
         mouse.x = e.clientX;
         mouse.y = e.clientY;
@@ -1037,27 +1027,24 @@
         }, 100 + Math.random() * 200);
     }
 
-    window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.setWeatherType = function(type) {
-        if (['clear', 'clouds', 'rain', 'snow', 'storm'].includes(type)) {
+        if (WEATHER_TYPES.includes(type)) {
             currentWeather = type;
             onWeatherChange(type);
         }
     };
     window.imaginalOS.setSeasonType = function(season) {
-        if (['spring', 'summer', 'autumn', 'winter'].includes(season)) {
+        if (SEASON_TYPES.includes(season)) {
             currentSeason = season;
         }
     };
 
-    window.setWeatherOverride = function(type) {
-        if (['clear', 'clouds', 'rain', 'snow', 'storm'].includes(type)) {
-            currentWeather = type;
-            window.telemetryData.weatherText = type.charAt(0).toUpperCase() + type.slice(1);
-            onWeatherChange(type);
-            return true;
-        }
-        return false;
+    window.imaginalOS.setWeatherOverride = function(type) {
+        if (!WEATHER_TYPES.includes(type)) return false;
+        currentWeather = type;
+        window.telemetryData.weatherText = type.charAt(0).toUpperCase() + type.slice(1);
+        onWeatherChange(type);
+        return true;
     };
 
     function renderWeatherLoop() {
@@ -1075,20 +1062,18 @@
             }
         }
         
-        const dt = new Date();
-        const currentHour = dt.getHours() + dt.getMinutes() / 60 + dt.getSeconds() / 3600;
-        
+        const currentHour = currentLocalHour();
+
         let maxAlpha = 0.35;
-        if (currentHour >= 20.5 || currentHour < 5.0) {
+        if (currentHour >= DAY_END || currentHour < DAY_START) {
             maxAlpha = 1.0;
-        } else if (currentHour >= 18.5 && currentHour < 20.5) {
-            const factor = (currentHour - 18.5) / 2.0;
-            maxAlpha = 0.35 + 0.65 * factor;
+        } else if (currentHour >= DUSK_START && currentHour < DUSK_END) {
+            maxAlpha = 0.35 + 0.65 * ((currentHour - DUSK_START) / (DUSK_END - DUSK_START));
         }
-        
+
         updateConstellations();
         drawConstellations(maxAlpha);
-        updateAndDrawClouds(maxAlpha, currentHour);
+        updateAndDrawClouds(currentHour);
         
         if (Math.random() < 0.0003 && maxAlpha > 0.34) {
             shootingStars.push({
@@ -1127,13 +1112,14 @@
             particleType = currentSeason;
         }
         
-        let desiredCount = 45;
-        if (particleType === 'rain') desiredCount = 100;
-        if (particleType === 'storm') desiredCount = 180;
-        if (particleType === 'snow') desiredCount = 90;
-        if (particleType === 'summer') desiredCount = 35;
-        
-        particles = particles.filter(p => p.type === particleType);
+        const desiredCount = PARTICLE_COUNTS[particleType] || 45;
+
+        // Only re-filter when the requested particle type actually changed,
+        // otherwise this allocates a new array on every single frame.
+        if (activeParticleType !== particleType) {
+            activeParticleType = particleType;
+            particles = particles.filter(p => p.type === particleType);
+        }
         while (particles.length < desiredCount) {
             particles.push(new Particle(particleType));
         }
@@ -1176,4 +1162,5 @@
 
     window.imaginalOS.initWeatherCanvas = initWeatherCanvas;
     window.imaginalOS.getCelestialInfo = getCelestialInfo;
+    window.imaginalOS.WEATHER_TYPES = WEATHER_TYPES;
 })();

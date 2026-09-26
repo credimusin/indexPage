@@ -2,38 +2,62 @@
  * ImaginalOS - CLI Static Data Catalog
  */
 (function() {
-    const HELP_COMMANDS = [
-        { name: "bmo", desc: "Launch BMO status and diagnostic panel." },
-        { name: "cat &lt;file&gt;", desc: "Print contents of a text file." },
-        { name: "cd [dir]", desc: "Change working directory." },
-        { name: "clear", desc: "Clear console window buffers." },
-        { name: "cookie", desc: "View BMO's statement on cookies." },
-        { name: "curl &lt;url&gt;", desc: "Transfer data from or to a server." },
-        { name: "date", desc: "Print current timestamp." },
-        { name: "exit", desc: "Close console terminal." },
-        { name: "git", desc: "Navigate directly to GitHub profile." },
-        { name: "gpg", desc: "Display owner's GPG public key." },
-        { name: "harvester", desc: "Run the digital footprint telemetry report." },
-        { name: "history", desc: "Display session command history list." },
-        { name: "ip", desc: "Show client's public IP address." },
-        { name: "ls [dir]", desc: "List directory contents." },
-        { name: "man [command]", desc: "Read detailed command manual." },
-        { name: "mkdir &lt;dir&gt;", desc: "Create a directory inside system." },
-        { name: "open &lt;url&gt;", desc: "Open a URL link in a new tab." },
-        { name: "pass [length]", desc: "Generate a strong random password." },
-        { name: "policy", desc: "Show terms of service and space rules." },
-        { name: "pwd", desc: "Print current working directory path." },
-        { name: "rm &lt;file&gt;", desc: "Delete files or empty folders." },
-        { name: "secret &lt;key&gt;", desc: "Decrypt cryptographic database lock." },
-        { name: "touch &lt;file&gt;", desc: "Create a file inside virtual environment." },
-        { name: "time", desc: "Show local time." },
-        { name: "game", desc: "Launch retro space rocks arcade shooter game." },
-        { name: "tips", desc: "Get a piece of highly constructive developer advice." },
-        { name: "uname", desc: "Print operating system details." },
-        { name: "vim &lt;file&gt;", desc: "Edit files in full-screen BIM-like console interface." },
-        { name: "weather", desc: "Display local climate details and status." },
-        { name: "whoami", desc: "Retrieve system profile breakdown." }
+    // Single source of truth for the command surface. `aliases` are the
+    // alternative spellings the dispatcher accepts; everything else in the
+    // system (help output, tab completion, history validation, man index) is
+    // derived from this list instead of repeating it.
+    const COMMANDS = [
+        { name: 'bmo', desc: 'Launch BMO status and diagnostic panel.' },
+        { name: 'cat', args: '&lt;file&gt;', desc: 'Print contents of a text file.' },
+        { name: 'bat', args: '&lt;file&gt;', desc: 'Print a file with BMO-style decorations.' },
+        { name: 'cd', args: '[dir]', desc: 'Change working directory.' },
+        { name: 'clear', desc: 'Clear console window buffers.' },
+        { name: 'cookie', aliases: ['cookies'], desc: "View BMO's statement on cookies." },
+        { name: 'curl', args: '&lt;url&gt;', desc: 'Transfer data from or to a server.' },
+        { name: 'date', desc: 'Print current timestamp.' },
+        { name: 'echo', args: '&lt;text&gt;', desc: 'Print text through the launch announcer.' },
+        { name: 'exit', aliases: ['close'], desc: 'Close console terminal.' },
+        { name: 'game', aliases: ['spacerock', 'spacerocks', 'asteroids'], desc: 'Launch retro space rocks arcade shooter game.' },
+        { name: 'git', aliases: ['github'], desc: 'Navigate directly to GitHub profile.' },
+        { name: 'gpg', desc: "Display owner's GPG public key." },
+        { name: 'harvester', aliases: ['scan'], desc: 'Run the digital footprint telemetry report.' },
+        { name: 'help', aliases: ['commands'], desc: 'Display this command listing.' },
+        { name: 'history', desc: 'Display session command history list.' },
+        { name: 'ip', desc: "Show client's public IP address." },
+        { name: 'ls', args: '[dir]', desc: 'List directory contents.' },
+        { name: 'man', args: '[command]', desc: 'Read detailed command manual.' },
+        { name: 'matrix', desc: 'Summon the digital rain screensaver.' },
+        { name: 'mkdir', args: '&lt;dir&gt;', desc: 'Create a directory inside system.' },
+        { name: 'mute', desc: 'Silence terminal audio synthesis.' },
+        { name: 'nano', args: '&lt;file&gt;', desc: 'Classic terminal editor. Not installed here.' },
+        { name: 'neofetch', desc: 'Print system summary next to the BMO logo.' },
+        { name: 'open', args: '&lt;url&gt;', desc: 'Open a URL link in a new tab.' },
+        { name: 'pass', args: '[length]', desc: 'Generate a strong random password.' },
+        { name: 'policy', aliases: ['policies'], desc: 'Show terms of service and space rules.' },
+        { name: 'pwd', desc: 'Print current working directory path.' },
+        { name: 'rm', args: '&lt;file&gt;', desc: 'Delete files or empty folders.' },
+        { name: 'secret', args: '&lt;key&gt;', desc: 'Decrypt cryptographic database lock.' },
+        { name: 'sudo', args: '&lt;task&gt;', desc: 'Escalate privileges. Password hint lives in the terminal.' },
+        { name: 'tg', aliases: ['telegram'], desc: 'Open the Telegram channel.' },
+        { name: 'time', desc: 'Show local time.' },
+        { name: 'tips', desc: 'Get a piece of highly constructive developer advice.' },
+        { name: 'touch', args: '&lt;file&gt;', desc: 'Create a file inside virtual environment.' },
+        { name: 'uname', args: '[flag]', desc: 'Print operating system details.' },
+        { name: 'unmute', desc: 'Restore terminal audio synthesis.' },
+        { name: 'vim', args: '&lt;file&gt;', aliases: ['banano', 'edit'], desc: 'Edit files in full-screen BIM-like console interface.' },
+        { name: 'weather', args: '[type]', desc: 'Display local climate details and status.' },
+        { name: 'whoami', desc: 'Retrieve system profile breakdown.' }
     ];
+
+    const ALL_COMMAND_NAMES = COMMANDS.flatMap(c => [c.name, ...(c.aliases || [])]);
+
+    function isKnownCommand(name) {
+        return ALL_COMMAND_NAMES.includes(String(name).toLowerCase());
+    }
+
+    function formatCommandName(command) {
+        return command.args ? `${command.name} ${command.args}` : command.name;
+    }
 
     const HINTS = [
         "Type 'git' to open BMO's GitHub profile.",
@@ -808,7 +832,10 @@ Options:<br>
 
     // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
-    window.imaginalOS.HELP_COMMANDS = HELP_COMMANDS;
+    window.imaginalOS.COMMANDS = COMMANDS;
+    window.imaginalOS.ALL_COMMAND_NAMES = ALL_COMMAND_NAMES;
+    window.imaginalOS.isKnownCommand = isKnownCommand;
+    window.imaginalOS.formatCommandName = formatCommandName;
     window.imaginalOS.HINTS = HINTS;
     window.imaginalOS.MAN_PAGES = MAN_PAGES;
     window.imaginalOS.COOKIE_POLICY_TEXT = COOKIE_POLICY_TEXT;

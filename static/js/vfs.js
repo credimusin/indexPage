@@ -149,37 +149,68 @@
         }
     };
 
-    const VFS_VERSION = window.imaginalOS.VERSION || '0.9.1';
+    function isDir(node) {
+        return !!node && node.type === 'dir';
+    }
+
+    function hasChildren(node) {
+        return isDir(node) && !!node.children;
+    }
+
+    // Files are stored on disk and hydrated into the in-memory tree on demand.
+    // A successful load is cached in localStorage with the rest of the
+    // filesystem; a failed one is not, so a retry can still succeed later.
+    async function loadNodeContent(node) {
+        if (!node || node.content !== undefined || !node.contentPath) return node ? node.content : undefined;
+
+        try {
+            const response = await fetch(node.contentPath);
+            if (!response.ok) {
+                node.content = `[Error: Failed to load ${node.contentPath}]`;
+                return node.content;
+            }
+            node.content = await response.text();
+        } catch {
+            node.content = `[Error: Network error loading ${node.contentPath}]`;
+            return node.content;
+        }
+
+        saveVFS(window.imaginalOS.filesystem);
+        return node.content;
+    }
+
+    // Adds anything the stored filesystem is missing from the shipped
+    // defaults, so a file added to the catalogue in a later release shows up
+    // for returning visitors too. Returns true when the tree was changed.
+    function mergeDefaults(node, defaults) {
+        if (!defaults || !hasChildren(defaults)) return false;
+
+        let changed = false;
+        if (!hasChildren(node)) {
+            node.children = {};
+            changed = true;
+        }
+        for (const [key, defaultChild] of Object.entries(defaults.children)) {
+            if (node.children[key] === undefined) {
+                node.children[key] = structuredClone(defaultChild);
+                changed = true;
+            } else if (mergeDefaults(node.children[key], defaultChild)) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
 
     function loadVFS() {
         try {
             const savedVersion = localStorage.getItem('imaginal_vfs_version');
-            if (savedVersion === String(VFS_VERSION)) {
-                const saved = localStorage.getItem('imaginal_vfs');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    try {
-                        const defBmo = defaultVFS.children.home.children.bmo.children;
-                        const savedBmo = parsed.children.home.children.bmo.children;
-                        if (defBmo && savedBmo) {
-                            for (const k in defBmo) {
-                                if (!savedBmo[k]) {
-                                    savedBmo[k] = structuredClone(defBmo[k]);
-                                }
-                            }
-                            const defProj = defBmo.projects && defBmo.projects.children;
-                            const savedProj = savedBmo.projects && savedBmo.projects.children;
-                            if (defProj && savedProj) {
-                                for (const pk in defProj) {
-                                    if (!savedProj[pk]) {
-                                        savedProj[pk] = structuredClone(defProj[pk]);
-                                    }
-                                }
-                            }
-                        }
-                    } catch {}
-                    return parsed;
+            const saved = localStorage.getItem('imaginal_vfs');
+            if (saved && savedVersion === String(window.imaginalOS.VERSION)) {
+                const parsed = JSON.parse(saved);
+                if (mergeDefaults(parsed, defaultVFS)) {
+                    saveVFS(parsed);
                 }
+                return parsed;
             }
         } catch {}
         const copy = structuredClone(defaultVFS);
@@ -190,19 +221,19 @@
     function saveVFS(vfsData) {
         try {
             localStorage.setItem('imaginal_vfs', JSON.stringify(vfsData));
-            localStorage.setItem('imaginal_vfs_version', String(VFS_VERSION));
+            localStorage.setItem('imaginal_vfs_version', String(window.imaginalOS.VERSION));
         } catch {}
     }
 
     function resolvePath(pathStr) {
-        let segments = pathStr.split('/');
+        const segments = pathStr.split('/');
         let workingPath = [...window.imaginalOS.currentPath];
 
         if (pathStr.startsWith('/')) {
             workingPath = [];
         }
 
-        for (let seg of segments) {
+        for (const seg of segments) {
             if (seg === '' || seg === '.') {
                 continue;
             }
@@ -216,8 +247,8 @@
         }
 
         let node = window.imaginalOS.filesystem;
-        for (let seg of workingPath) {
-            if (node.type === 'dir' && node.children && node.children[seg]) {
+        for (const seg of workingPath) {
+            if (hasChildren(node) && node.children[seg]) {
                 node = node.children[seg];
             } else {
                 return { error: 'No such file or directory', path: workingPath };
@@ -229,6 +260,9 @@
     // Expose on global namespace
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.defaultVFS = defaultVFS;
+    window.imaginalOS.isDir = isDir;
+    window.imaginalOS.hasChildren = hasChildren;
+    window.imaginalOS.loadNodeContent = loadNodeContent;
     window.imaginalOS.filesystem = loadVFS();
     window.imaginalOS.currentPath = ['home', 'bmo'];
     window.imaginalOS.saveVFS = saveVFS;

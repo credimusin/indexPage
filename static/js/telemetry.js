@@ -2,20 +2,58 @@
  * imaginalOS - Telemetry Forensics Harvester Module
  */
 (function() {
+    const FALLBACK_LAT = 59.9386;
+    const FALLBACK_LON = 30.3141;
+    const GEO_TIMEOUT_MS = 4000;
+    const WEATHER_TIMEOUT_MS = 4000;
+
+    // WMO weather interpretation codes -> the small set of scene types the
+    // canvas knows how to draw. `weather` prints these labels too.
+    const WEATHER_CODE_MAP = [
+        { max: 0, type: 'clear', text: 'Clear sky' },
+        { max: 3, type: 'clouds', text: 'Partly cloudy' },
+        { max: 48, type: 'clouds', text: 'Foggy atmosphere' },
+        { max: 57, type: 'rain', text: 'Light drizzle' },
+        { max: 67, type: 'rain', text: 'Rainfall' },
+        { max: 77, type: 'snow', text: 'Snowfall' },
+        { max: 82, type: 'rain', text: 'Showers' },
+        { max: 86, type: 'snow', text: 'Snow showers' },
+        { max: 99, type: 'storm', text: 'Thunderstorm' }
+    ];
+
+    // Pure lookup: WMO code -> { type, text }. No side effects, so other
+    // modules (the `weather` report) can reuse the mapping.
+    function describeWeatherCode(code) {
+        return WEATHER_CODE_MAP.find(entry => code <= entry.max) || WEATHER_CODE_MAP[0];
+    }
+
+    function interpretWeatherCode(code) {
+        const match = describeWeatherCode(code);
+        if (window.imaginalOS.setWeatherType) {
+            window.imaginalOS.setWeatherType(match.type);
+        }
+        window.telemetryData.weatherText = match.text;
+    }
+
     // Global telemetry registry
     window.telemetryData = {
         ip: 'Scanning...',
         city: 'Saint Petersburg (Fallback)',
-        region: 'Saint Petersburg',
         country: 'Russia',
         isp: 'Local Loopback ISP',
-        lat: 59.9386,
-        lon: 30.3141,
+        lat: FALLBACK_LAT,
+        lon: FALLBACK_LON,
         timezone: 'Europe/Moscow',
         weatherCode: 0,
         weatherText: 'Clear sky',
         temperature: '0°C',
         windspeed: '0 m/s',
+        tempMax: null,
+        tempMin: null,
+        uvMax: null,
+        precipitation: null,
+        sunrise: null,
+        sunset: null,
         os: 'Unknown OS',
         browser: 'Unknown Browser',
         cores: navigator.hardwareConcurrency || 'N/A',
@@ -34,12 +72,8 @@
         doNotTrack: navigator.doNotTrack || 'N/A',
         gpuVendor: 'Unknown',
         gpuRenderer: 'Unknown',
-        referrer: document.referrer || 'Direct Visit',
-        language: navigator.language || 'en-US'
+        referrer: document.referrer || 'Direct Visit'
     };
-
-    const FALLBACK_LAT = 59.9386;
-    const FALLBACK_LON = 30.3141;
 
     function parseUA() {
         const ua = navigator.userAgent;
@@ -60,7 +94,7 @@
         else if (ua.indexOf("Macintosh") > -1) os = "macOS";
         else if (ua.indexOf("Android") > -1) os = "Android OS";
         else if (ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) os = "iOS";
-        else if (ua.indexOf("Linux") > -1) os = "Linux Linux-Kernel";
+        else if (ua.indexOf("Linux") > -1) os = "Linux";
         
         window.telemetryData.browser = browser;
         window.telemetryData.os = os;
@@ -200,198 +234,133 @@
         }
     }
 
-    function getGeoAndWeather() {
-        // 1. Try ipapi.co first
-        fetch('https://ipapi.co/json/')
-            .then(res => {
-                if (!res.ok) throw new Error("CORS or network error");
-                return res.json();
-            })
-            .then(data => {
-                if (data && data.ip) {
-                    return {
-                        ip: data.ip,
-                        city: data.city || 'Saint Petersburg',
-                        region: data.region || 'Saint/Leningrad',
-                        country: data.country_name || 'Russia',
-                        isp: data.org || 'ISP',
-                        latitude: data.latitude,
-                        longitude: data.longitude,
-                        timezone: data.timezone || 'Europe/Moscow'
-                    };
-                }
-                throw new Error("Invalid payload");
-            })
-            .catch(() => {
-                // 2. Fallback to ipinfo.io
-                return fetch('https://ipinfo.io/json')
-                    .then(res => {
-                        if (!res.ok) throw new Error("CORS or network error");
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data && data.ip) {
-                            const loc = (data.loc || '').split(',');
-                            return {
-                                ip: data.ip,
-                                city: data.city || 'Saint Petersburg',
-                                region: data.region || 'Saint Petersburg',
-                                country: data.country || 'Russia',
-                                isp: data.org || 'ISP',
-                                latitude: parseFloat(loc[0]) || FALLBACK_LAT,
-                                longitude: parseFloat(loc[1]) || FALLBACK_LON,
-                                timezone: data.timezone || 'Europe/Moscow'
-                            };
-                        }
-                        throw new Error("Invalid ipinfo payload");
-                    });
-            })
-            .catch(() => {
-                // 3. Fallback to ipwho.is
-                return fetch('https://ipwho.is/')
-                    .then(res => {
-                        if (!res.ok) throw new Error("CORS or network error");
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data && data.success) {
-                            return {
-                                ip: data.ip,
-                                city: data.city || 'Saint Petersburg',
-                                region: data.region || 'Saint Petersburg',
-                                country: data.country || 'Russia',
-                                isp: (data.connection && data.connection.isp) || 'ISP',
-                                latitude: data.latitude,
-                                longitude: data.longitude,
-                                timezone: (data.timezone && data.timezone.id) || 'Europe/Moscow'
-                            };
-                        }
-                        throw new Error("Invalid ipwho payload");
-                    });
-            })
-            .then(geo => {
-                window.telemetryData.ip = geo.ip;
-                window.telemetryData.city = geo.city;
-                window.telemetryData.region = geo.region;
-                window.telemetryData.country = geo.country;
-                window.telemetryData.isp = geo.isp;
-                window.telemetryData.lat = geo.latitude || FALLBACK_LAT;
-                window.telemetryData.lon = geo.longitude || FALLBACK_LON;
-                window.telemetryData.timezone = geo.timezone;
-                
-                return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${window.telemetryData.lat}&longitude=${window.telemetryData.lon}&current_weather=true&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=auto`)
-                    .then(res => res.json())
-                    .catch(() => null);
-            })
-            .catch(() => {
-                // Static Fallback
-                window.telemetryData.ip = 'IP Obfuscated';
-                window.telemetryData.city = 'Saint Petersburg';
-                window.telemetryData.region = 'Saint/Leningrad';
-                window.telemetryData.country = 'Russia';
-                window.telemetryData.isp = 'VLAN Fallback';
-                window.telemetryData.lat = FALLBACK_LAT;
-                window.telemetryData.lon = FALLBACK_LON;
-                window.telemetryData.timezone = 'Europe/Moscow';
-                
-                return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${FALLBACK_LAT}&longitude=${FALLBACK_LON}&current_weather=true&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=auto`)
-                    .then(res => res.json())
-                    .catch(() => null);
-            })
-            .then(weather => {
-                if (weather) {
-                    if (weather.current_weather) {
-                        const cw = weather.current_weather;
-                        window.telemetryData.weatherCode = cw.weathercode;
-                        window.telemetryData.temperature = `${cw.temperature}°C`;
-                        window.telemetryData.windspeed = `${cw.windspeed} km/h`;
-                        
-                        if (cw.winddirection !== undefined) {
-                            window.telemetryData.windDirection = cw.winddirection;
-                            const moveAngle = (cw.winddirection + 180) * Math.PI / 180;
-                            const speedFactor = Math.min(2.0, Math.max(0.4, cw.windspeed / 12.0));
-                            window.windVector = {
-                                x: Math.cos(moveAngle) * speedFactor,
-                                y: Math.sin(moveAngle) * speedFactor * 0.2
-                            };
-                        }
-                        
-                        interpretWeatherCode(cw.weathercode);
-                    }
-                    
-                    if (weather.daily) {
-                        const d = weather.daily;
-                        if (d.sunrise && d.sunrise[0]) {
-                            window.telemetryData.sunrise = d.sunrise[0].split('T')[1] || 'N/A';
-                        }
-                        if (d.sunset && d.sunset[0]) {
-                            window.telemetryData.sunset = d.sunset[0].split('T')[1] || 'N/A';
-                        }
-                        if (d.temperature_2m_max && d.temperature_2m_max[0]) {
-                            window.telemetryData.tempMax = `${d.temperature_2m_max[0]}°C`;
-                        }
-                        if (d.temperature_2m_min && d.temperature_2m_min[0]) {
-                            window.telemetryData.tempMin = `${d.temperature_2m_min[0]}°C`;
-                        }
-                        if (d.uv_index_max && d.uv_index_max[0] !== undefined) {
-                            window.telemetryData.uvMax = d.uv_index_max[0];
-                        }
-                        if (d.precipitation_sum && d.precipitation_sum[0] !== undefined) {
-                            window.telemetryData.precipitation = `${d.precipitation_sum[0]} mm`;
-                        }
-                    }
-                } else {
-                    window.telemetryData.weatherCode = 0;
-                    window.telemetryData.temperature = '15°C';
-                    window.telemetryData.windspeed = '5 km/h';
-                    interpretWeatherCode(0);
-                }
-            })
-            .catch(() => {
-                window.telemetryData.weatherCode = 0;
-                window.telemetryData.temperature = '15°C';
-                window.telemetryData.windspeed = '5 km/h';
-                interpretWeatherCode(0);
-            });
+    // Three geolocation providers, tried in order until one answers. Each is
+    // bounded by a timeout so a hanging endpoint cannot stall the whole chain.
+    async function fetchJson(url, timeout) {
+        const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
     }
 
-    function interpretWeatherCode(code) {
-        let type = 'clear';
-        let text = 'Clear sky';
-        
-        if (code === 0) {
-            type = 'clear';
-            text = 'Clear sky';
-        } else if (code >= 1 && code <= 3) {
-            type = 'clouds';
-            text = 'Partly cloudy';
-        } else if (code === 45 || code === 48) {
-            type = 'clouds';
-            text = 'Foggy atmosphere';
-        } else if (code >= 51 && code <= 57) {
-            type = 'rain';
-            text = 'Light drizzle';
-        } else if (code >= 61 && code <= 67) {
-            type = 'rain';
-            text = 'Rainfall';
-        } else if (code >= 71 && code <= 77) {
-            type = 'snow';
-            text = 'Snowfall';
-        } else if (code >= 80 && code <= 82) {
-            type = 'rain';
-            text = 'Showers';
-        } else if (code === 85 || code === 86) {
-            type = 'snow';
-            text = 'Snow showers';
-        } else if (code >= 95) {
-            type = 'storm';
-            text = 'Thunderstorm';
+    const GEO_PROVIDERS = [
+        {
+            url: 'https://ipapi.co/json/',
+            parse: (data) => data && data.ip && ({
+                ip: data.ip,
+                city: data.city,
+                country: data.country_name,
+                isp: data.org,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                timezone: data.timezone
+            })
+        },
+        {
+            url: 'https://ipinfo.io/json',
+            parse: (data) => {
+                if (!data || !data.ip) return null;
+                const [lat, lon] = (data.loc || '').split(',');
+                return {
+                    ip: data.ip,
+                    city: data.city,
+                    country: data.country,
+                    isp: data.org,
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lon),
+                    timezone: data.timezone
+                };
+            }
+        },
+        {
+            url: 'https://ipwho.is/',
+            parse: (data) => data && data.success && ({
+                ip: data.ip,
+                city: data.city,
+                country: data.country,
+                isp: data.connection && data.connection.isp,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                timezone: data.timezone && data.timezone.id
+            })
         }
-        
-        if (window.imaginalOS.setWeatherType) {
-            window.imaginalOS.setWeatherType(type);
+    ];
+
+    async function resolveGeo() {
+        for (const provider of GEO_PROVIDERS) {
+            try {
+                const geo = provider.parse(await fetchJson(provider.url, GEO_TIMEOUT_MS));
+                if (geo) return geo;
+            } catch {
+                // Try the next provider.
+            }
         }
-        window.telemetryData.weatherText = text;
+        return null;
+    }
+
+    function applyGeo(geo) {
+        const td = window.telemetryData;
+        td.ip = geo.ip || 'IP Obfuscated';
+        td.city = geo.city || 'Saint Petersburg';
+        td.country = geo.country || 'Russia';
+        td.isp = geo.isp || 'VLAN Fallback';
+        td.lat = Number.isFinite(geo.latitude) ? geo.latitude : FALLBACK_LAT;
+        td.lon = Number.isFinite(geo.longitude) ? geo.longitude : FALLBACK_LON;
+        td.timezone = geo.timezone || 'Europe/Moscow';
+    }
+
+    function applyWeather(weather) {
+        const td = window.telemetryData;
+        if (!weather) {
+            td.weatherCode = 0;
+            td.temperature = '15°C';
+            td.windspeed = '5 km/h';
+            interpretWeatherCode(0);
+            return;
+        }
+
+        if (weather.current_weather) {
+            const cw = weather.current_weather;
+            td.weatherCode = cw.weathercode;
+            td.temperature = `${cw.temperature}°C`;
+            td.windspeed = `${cw.windspeed} km/h`;
+
+            if (cw.winddirection !== undefined) {
+                const moveAngle = (cw.winddirection + 180) * Math.PI / 180;
+                const speedFactor = Math.min(2.0, Math.max(0.4, cw.windspeed / 12.0));
+                window.windVector = {
+                    x: Math.cos(moveAngle) * speedFactor,
+                    y: Math.sin(moveAngle) * speedFactor * 0.2
+                };
+            }
+
+            interpretWeatherCode(cw.weathercode);
+        }
+
+        const d = weather.daily;
+        if (!d) return;
+        if (d.sunrise && d.sunrise[0]) td.sunrise = d.sunrise[0].split('T')[1] || 'N/A';
+        if (d.sunset && d.sunset[0]) td.sunset = d.sunset[0].split('T')[1] || 'N/A';
+        if (d.temperature_2m_max && d.temperature_2m_max[0] !== undefined) td.tempMax = `${d.temperature_2m_max[0]}°C`;
+        if (d.temperature_2m_min && d.temperature_2m_min[0] !== undefined) td.tempMin = `${d.temperature_2m_min[0]}°C`;
+        if (d.uv_index_max && d.uv_index_max[0] !== undefined) td.uvMax = d.uv_index_max[0];
+        if (d.precipitation_sum && d.precipitation_sum[0] !== undefined) td.precipitation = `${d.precipitation_sum[0]} mm`;
+    }
+
+    async function getGeoAndWeather() {
+        const geo = await resolveGeo();
+        applyGeo(geo || { ip: null });
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${window.telemetryData.lat}` +
+                    `&longitude=${window.telemetryData.lon}&current_weather=true` +
+                    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=auto`;
+
+        let weather = null;
+        try {
+            weather = await fetchJson(url, WEATHER_TIMEOUT_MS);
+        } catch {
+            weather = null;
+        }
+        applyWeather(weather);
     }
 
     function detectSeason() {
@@ -420,11 +389,13 @@
         fetchNetworkDetails();
         fetchBatteryDetails();
         detectSeason();
-        getGeoAndWeather();
+        getGeoAndWeather().catch(() => {
+            window.telemetryData.ip = 'IP Obfuscated';
+        });
     }
 
     // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.initTelemetry = initTelemetry;
-    window.imaginalOS.interpretWeatherCode = interpretWeatherCode;
+    window.imaginalOS.describeWeatherCode = describeWeatherCode;
 })();

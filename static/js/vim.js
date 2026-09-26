@@ -2,6 +2,8 @@
  * imaginalOS - BIM (Vim Improved) Editor Module
  */
 (function() {
+    const FLAG_KEY = 'flag{h4ck_th3_pl4n3t_1999}';
+
     let vimFileNode = null;
     let vimFileName = '';
     let vimMode = 'normal'; // 'normal', 'insert', 'colon'
@@ -11,27 +13,42 @@
     let vimColonBar = null;
     let vimColonInput = null;
 
+    // Splits a "dir/file" argument the same way ls/cat/mkdir do.
+    function splitTarget(pathStr) {
+        let name = pathStr;
+        let dirPath = '.';
+        if (pathStr.includes('/')) {
+            const parts = pathStr.split('/');
+            name = parts.pop();
+            dirPath = parts.join('/') || '/';
+        }
+        return { name, dirPath };
+    }
+
     async function runVim(pathStr) {
         if (!pathStr) {
             window.imaginalOS.writeOutput("<span class='err'>vim: missing file operand</span><br>");
             return;
         }
-        
-        let filename = pathStr;
-        let dirPathStr = '.';
-        if (pathStr.includes('/')) {
-            const parts = pathStr.split('/');
-            filename = parts.pop();
-            dirPathStr = parts.join('/') || '/';
-        }
-        
-        const dirRes = window.imaginalOS.resolvePath(dirPathStr);
+
+        const { name: targetName, dirPath } = splitTarget(pathStr);
+        let filename = targetName;
+        const dirRes = window.imaginalOS.resolvePath(dirPath);
         if (dirRes.error) {
-            window.imaginalOS.writeOutput(`<span class='err'>vim: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPathStr)}</span><br>`);
+            window.imaginalOS.writeOutput(`<span class='err'>vim: ${dirRes.error}: ${window.imaginalOS.escapeHtml(dirPath)}</span><br>`);
             return;
         }
-        
+        if (!window.imaginalOS.hasChildren(dirRes.node)) {
+            window.imaginalOS.writeOutput(`<span class='err'>vim: ${window.imaginalOS.escapeHtml(dirPath)}: Not a directory</span><br>`);
+            return;
+        }
+
         const dirNode = dirRes.node;
+        if (dirNode.children[filename] && window.imaginalOS.isDir(dirNode.children[filename])) {
+            window.imaginalOS.writeOutput(`<span class='err'>vim: ${window.imaginalOS.escapeHtml(filename)}: Is a directory</span><br>`);
+            return;
+        }
+
         if (!dirNode.children[filename]) {
             const sanitizedName = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
             if (!sanitizedName || sanitizedName !== filename) {
@@ -44,23 +61,9 @@
             };
             filename = sanitizedName;
         }
-        
-        const editingFileNode = dirNode.children[filename];
 
-        // Fetch lazy content if needed
-        if (editingFileNode.contentPath && (editingFileNode.readonly || editingFileNode.content === undefined)) {
-            try {
-                const response = await fetch(editingFileNode.contentPath);
-                if (response.ok) {
-                    editingFileNode.content = await response.text();
-                    window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-                } else {
-                    if (editingFileNode.content === undefined) editingFileNode.content = `[Error: Failed to load ${editingFileNode.contentPath}]`;
-                }
-            } catch {
-                if (editingFileNode.content === undefined) editingFileNode.content = `[Error: Network error loading ${editingFileNode.contentPath}]`;
-            }
-        }
+        const editingFileNode = dirNode.children[filename];
+        await window.imaginalOS.loadNodeContent(editingFileNode);
 
         launchVimEditor(filename, editingFileNode);
     }
@@ -76,10 +79,10 @@
         vimEditorEl.className = 'vim-editor';
         vimEditorEl.innerHTML = `
             <div class="vim-content-area" style="position: relative; display: flex; flex-direction: column; height: 100%;">
-                <textarea class="vim-textarea" spellcheck="false" readonly>${window.imaginalOS.escapeHtml(fileNode.content)}</textarea>
+                <textarea class="vim-textarea" spellcheck="false" readonly>${window.imaginalOS.escapeHtml(fileNode.content || '')}</textarea>
                 <div class="vim-splash" style="display: ${isEmpty ? 'block' : 'none'};">
                     <div style="text-align: center; margin-top: 3vh; color: #64ffda; font-weight: bold; font-size: 16px;">B I M - BMO Improved</div>
-                    <div style="text-align: center; color: #8892b0; font-size: 12px; margin-top: 2px;">version ${window.imaginalOS.VERSION || '0.9.1'}</div>
+                    <div style="text-align: center; color: #8892b0; font-size: 12px; margin-top: 2px;">version ${window.imaginalOS.VERSION}</div>
                     <div style="text-align: center; color: #8892b0; font-size: 11px;">by Maksim B</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 13px; margin-top: 18px; font-style: italic; text-shadow: 0 0 8px rgba(255, 121, 198, 0.4);">"From here, you can never truly escape!"</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 11px; margin-top: 2px;">(Just kidding, type :q! to force quit)</div>
@@ -184,43 +187,50 @@
         if (filename === 'contact.txt') {
             return { text: rawText, corrupted: false };
         }
-        
-        let corrupted = false;
-        const urlRegex = /(https?:\/\/[^\s()<>]+)/g;
-        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-        const key = 'flag{h4ck_th3_pl4n3t_1999}';
-        
-        let newText = rawText;
-        
-        if (urlRegex.test(rawText) || emailRegex.test(rawText)) {
-            corrupted = true;
-            urlRegex.lastIndex = 0;
-            emailRegex.lastIndex = 0;
-            
-            newText = newText.replace(urlRegex, (match) => {
-                const encrypted = window.imaginalOS.xorCipher ? window.imaginalOS.xorCipher(match, key) : match;
-                return `[BMO-SHIELD: ${encrypted} (Decrypt with: secret decrypt ${key} ${encrypted})]`;
-            });
-            
-            newText = newText.replace(emailRegex, (match) => {
-                const encrypted = window.imaginalOS.xorCipher ? window.imaginalOS.xorCipher(match, key) : match;
-                return `[BMO-SHIELD: ${encrypted} (Decrypt with: secret decrypt ${key} ${encrypted})]`;
-            });
+
+        const urlRegex = /(https?:\/\/[^\s()<>]+)/;
+        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+
+        if (!urlRegex.test(rawText) && !emailRegex.test(rawText)) {
+            return { text: rawText, corrupted: false };
         }
-        
-        return { text: newText, corrupted: corrupted };
+
+        const shield = (match) => {
+            const encrypted = window.imaginalOS.xorCipher(match, FLAG_KEY);
+            return `[BMO-SHIELD: ${encrypted} (Decrypt with: secret decrypt ${FLAG_KEY} ${encrypted})]`;
+        };
+
+        return {
+            text: rawText.replace(new RegExp(urlRegex, 'g'), shield).replace(new RegExp(emailRegex, 'g'), shield),
+            corrupted: true
+        };
+    }
+
+    // Every non-writing colon command ends the same way: drop out of COMMAND
+    // mode, redraw the status bar and report the outcome.
+    function leaveColonMode(message, isError = false) {
+        vimMode = 'normal';
+        vimColonBar.style.display = 'none';
+        vimColonInput.blur();
+        vimEditorEl.focus();
+
+        if (!message) {
+            updateVimStatus();
+            return;
+        }
+        const prefix = isError ? `<span class="vim-badge command" style="background:#e53e3e;">ERROR</span> ` : '';
+        vimStatusLabel.innerHTML = prefix + message;
+    }
+
+    function reportShieldedContent(processed) {
+        if (!processed.corrupted) return;
+        window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO Warning:</span> Links/emails are restricted for security! Automated crypto-shield active. Secrets locked with ${FLAG_KEY}.<br>`);
     }
 
     function executeVimColonCommand(cmd) {
-        if (cmd === 'wq' || cmd === 'w') {
-            if (vimFileNode.readonly) {
-                vimMode = 'normal';
-                vimColonBar.style.display = 'none';
-                vimColonInput.blur();
-                updateVimStatus();
-                vimStatusLabel.innerHTML = `<span class="vim-badge command" style="background:#e53e3e;">ERROR</span> [readonly] File is read-only (system write-protection active)`;
-                return;
-            }
+        if ((cmd === 'wq' || cmd === 'w') && vimFileNode.readonly) {
+            leaveColonMode('[readonly] File is read-only (system write-protection active)', true);
+            return;
         }
 
         if (cmd === 'wq') {
@@ -229,41 +239,35 @@
             window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
             closeVimEditor();
             window.imaginalOS.writeOutput(`"${window.imaginalOS.escapeHtml(vimFileName)}" written and saved.<br>`);
-            if (processed.corrupted) {
-                window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO Warning:</span> Links/emails are restricted for security! Automated crypto-shield active. Secrets locked with flag{h4ck_th3_pl4n3t_1999}.<br>`);
-            }
-        } else if (cmd === 'w') {
+            reportShieldedContent(processed);
+            return;
+        }
+
+        if (cmd === 'w') {
             const processed = processSavedContent(vimFileName, vimTextarea.value);
             vimFileNode.content = processed.text;
             vimTextarea.value = processed.text;
             window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-            vimMode = 'normal';
-            vimColonBar.style.display = 'none';
-            vimColonInput.blur();
-            updateVimStatus();
-            vimStatusLabel.textContent = `"${vimFileName}" written.`;
-            if (processed.corrupted) {
-                window.imaginalOS.writeOutput(`<span style="color: #64ffda; font-weight: bold;">BMO Warning:</span> Links/emails are restricted for security! Automated crypto-shield active. Secrets locked with flag{h4ck_th3_pl4n3t_1999}.<br>`);
-            }
-        } else if (cmd === 'q') {
-            const hasChanges = vimTextarea.value !== vimFileNode.content;
-            if (hasChanges) {
-                vimMode = 'normal';
-                vimColonBar.style.display = 'none';
-                vimColonInput.blur();
-                updateVimStatus();
-                vimStatusLabel.innerHTML = `<span class="vim-badge command" style="background:#e53e3e;">ERROR</span> No write since last change (add ! to override)`;
+            leaveColonMode(`"${window.imaginalOS.escapeHtml(vimFileName)}" written.`);
+            reportShieldedContent(processed);
+            return;
+        }
+
+        if (cmd === 'q') {
+            if (vimTextarea.value !== vimFileNode.content) {
+                leaveColonMode('No write since last change (add ! to override)', true);
             } else {
                 closeVimEditor();
             }
-        } else if (cmd === 'q!') {
-            closeVimEditor();
-        } else {
-            vimMode = 'normal';
-            vimColonBar.style.display = 'none';
-            vimColonInput.blur();
-            updateVimStatus();
+            return;
         }
+
+        if (cmd === 'q!') {
+            closeVimEditor();
+            return;
+        }
+
+        leaveColonMode();
     }
 
     function closeVimEditor() {

@@ -5,8 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "eslint \"static/js/**/*.js\"",
-    "build": "echo 'No build step required for static deployment'"
+    "lint": "eslint .",
+    "build": "echo 'No build step required for static deployment'",
+    "check": "npm run lint"
   },
   "devDependencies": {
     "eslint": "^9.6.0",

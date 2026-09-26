@@ -9,7 +9,6 @@
     window.imaginalOS.commandHistory = [];
     
     let historyIndex = -1;
-    let sudoAttempts = 0;
     
     let terminalContainer = null;
     let terminalOutput = null;
@@ -232,14 +231,18 @@
             hintBarTimeout = setTimeout(showHintBar, 10000);
             return;
         }
-        
-        isHintVisible = true;
+
         const hints = window.imaginalOS.HINTS || [];
-        if (hints.length === 0) return;
+        if (hints.length === 0) {
+            hintBarTimeout = setTimeout(showHintBar, 30000);
+            return;
+        }
+
+        isHintVisible = true;
         const hint = hints[Math.floor(Math.random() * hints.length)];
         terminalHintBar.innerHTML = wrapEmoji(`<span class="hint-prefix">Hint:</span> ${hint}`);
         terminalHintBar.classList.add('visible');
-        
+
         hintBarHideTimeout = setTimeout(hideHintBar, 12000);
     }
 
@@ -274,18 +277,12 @@
     // Output Logger
     function writeOutput(text) {
         if (!terminalOutput) return;
-        terminalOutput.innerHTML += wrapEmoji(text);
+        // insertAdjacentHTML, not innerHTML +=: re-serialising the whole buffer
+        // on every line both grows quadratically and detaches the live nodes
+        // that the typewriter effect is currently writing into.
+        terminalOutput.insertAdjacentHTML('beforeend', wrapEmoji(text));
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
         setTimeout(updateScrollIndicator, 10);
-    }
-
-    function escapeHtml(text) {
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
     }
 
     function syncInputBuffer() {
@@ -301,9 +298,9 @@
         const part1 = val.substring(0, selStart);
         const part2 = val.substring(selStart);
 
-        terminalCmdBuffer.innerHTML = escapeHtml(part1) + 
-                                      '<span class="terminal-cursor"></span>' + 
-                                      escapeHtml(part2);
+        terminalCmdBuffer.innerHTML = window.imaginalOS.escapeHtml(part1) +
+                                      '<span class="terminal-cursor"></span>' +
+                                      window.imaginalOS.escapeHtml(part2);
     }
     window.imaginalOS.syncInputBuffer = syncInputBuffer;
 
@@ -330,7 +327,7 @@
         if (e.key === 'Enter') {
             if (window.imaginalOS.shellState === 'sudo_password') {
                 const password = terminalInput.value.trim();
-                executePasswordCheck(password);
+                window.imaginalOS.submitSudoPassword(password);
                 terminalInput.value = '';
                 syncInputBuffer();
             } else {
@@ -368,28 +365,6 @@
         }
     }
 
-    function executePasswordCheck(pwd) {
-        writeOutput(getPromptString() + '*'.repeat(pwd.length) + '<br>');
-        
-        if (pwd.toLowerCase() === 'love' || pwd.toLowerCase() === 'admin' || pwd.toLowerCase() === 'bmo') {
-            window.imaginalOS.shellState = 'normal';
-            playBeepSound(700, 0.1, 'sine');
-            writeOutput("<span class='cmd'>Access Granted. You are temporarily root. Type 'rm -rf /' to reboot.</span><br>");
-        } else {
-            sudoAttempts++;
-            if (sudoAttempts >= 3) {
-                window.imaginalOS.shellState = 'normal';
-                sudoAttempts = 0;
-                playBeepSound(250, 0.2, 'sawtooth');
-                writeOutput("<span class='err'>sudo: 3 incorrect password attempts. Incidents reported. Locking shell.</span><br>");
-            } else {
-                playBeepSound(300, 0.15, 'sawtooth');
-                writeOutput("<span class='err'>Sorry, try again.</span><br>");
-            }
-        }
-        terminalPromptSymbol.innerHTML = getPromptString();
-    }
-
     async function executeCommand(rawCmd) {
         if (!rawCmd) {
             writeOutput(getPromptString() + '<br>');
@@ -402,171 +377,145 @@
         const parts = rawCmd.split(' ');
         const cmd = parts[0].toLowerCase();
         const args = parts.slice(1);
+        const os = window.imaginalOS;
 
         const cmdId = 'cmd-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        writeOutput(`<div id="${cmdId}">${getPromptString()}${escapeHtml(rawCmd)}</div>`);
+        writeOutput(`<div id="${cmdId}">${getPromptString()}${os.escapeHtml(rawCmd)}</div>`);
 
-        switch(cmd) {
+        // Dispatch only: every branch hands off to a command implementation,
+        // so this file stays responsible for the shell, not for output text.
+        switch (cmd) {
             case 'help':
             case 'commands':
-                window.imaginalOS.runHelp();
+                os.runHelp();
                 break;
             case 'man':
-                window.imaginalOS.runMan(args[0]);
+                os.runMan(args[0]);
                 break;
             case 'ls':
-                window.imaginalOS.runLs(args[0]);
+                os.runLs(args[0]);
                 break;
             case 'cd':
-                window.imaginalOS.runCd(args[0]);
+                os.runCd(args[0]);
                 break;
             case 'curl':
-                await window.imaginalOS.runCurl(args);
+                await os.runCurl(args);
                 break;
             case 'cat':
-                await window.imaginalOS.runCat(args[0], false);
+                await os.runCat(args[0], false);
                 break;
             case 'bat':
-                await window.imaginalOS.runCat(args[0], true);
+                await os.runCat(args[0], true);
                 break;
             case 'pwd':
-                await window.imaginalOS.runPwd();
+                await os.runPwd();
                 break;
             case 'uname':
-                await window.imaginalOS.runUname(args[0]);
+                await os.runUname(args[0]);
                 break;
             case 'tips':
-                await window.imaginalOS.runTips();
+                await os.runTips();
                 break;
             case 'history':
-                window.imaginalOS.runHistory();
+                os.runHistory();
                 break;
             case 'echo':
-                window.imaginalOS.animateEchoBanner(args.join(' '));
+                os.animateEchoBanner(args.join(' '));
                 break;
             case 'mkdir':
-                await window.imaginalOS.runMkdir(args[0]);
+                await os.runMkdir(args[0]);
                 break;
             case 'touch':
-                await window.imaginalOS.runTouch(args[0]);
+                await os.runTouch(args[0]);
                 break;
             case 'rm':
-                await window.imaginalOS.runRm(args[0]);
+                await os.runRm(args[0]);
                 break;
             case 'nano':
-                playBeepSound(300, 0.1, 'sine');
-                writeOutput(`<span class="err">nano: command not found.</span> Did you mean <span class="cmd">'banano'</span>? 🍌<br>`);
+                os.runNano();
                 break;
             case 'banano':
             case 'edit':
             case 'vim':
-                window.imaginalOS.runVim(args[0]);
+                os.runVim(args[0]);
                 break;
             case 'clear':
                 triggerDegaussClear();
                 break;
             case 'time':
-                await window.imaginalOS.runTime();
+                await os.runTime();
                 break;
             case 'whoami':
-                await window.imaginalOS.runWhoami();
+                await os.runWhoami();
                 break;
             case 'neofetch':
-                await window.imaginalOS.runNeofetch();
+                await os.runNeofetch();
                 break;
             case 'harvester':
             case 'scan':
-                window.imaginalOS.runHarvester();
+                os.runHarvester();
                 break;
             case 'weather':
                 if (args[0]) {
-                    const ok = window.setWeatherOverride(args[0].toLowerCase());
-                    if (ok) {
-                        writeOutput(`Weather override activated: <span class="cmd">${args[0].toLowerCase()}</span><br>`);
-                    } else {
-                        writeOutput(`<span class="err">Invalid weather type. Choose from: clear, clouds, rain, snow, storm.</span><br>`);
-                    }
+                    os.runWeatherOverride(args[0].toLowerCase());
                 } else {
-                    await window.imaginalOS.runWeather();
+                    await os.runWeather();
                 }
                 break;
             case 'open':
-                window.imaginalOS.runOpen(args[0]);
+                os.runOpen(args[0]);
                 break;
             case 'ip':
-                window.imaginalOS.runIp();
+                os.runIp();
                 break;
             case 'pass':
-                await window.imaginalOS.runPass(args[0]);
+                await os.runPass(args[0]);
                 break;
             case 'mute':
-                window.audioSynthMuted = true;
-                writeOutput("Terminal audio effects MUTED.<br>");
+                os.runMute(true);
                 break;
             case 'unmute':
-                window.audioSynthMuted = false;
-                writeOutput("Terminal audio effects UNMUTED.<br>");
+                os.runMute(false);
                 break;
             case 'cookies':
             case 'cookie':
-                await window.imaginalOS.runCookies();
+                await os.runCookies();
                 break;
             case 'policy':
             case 'policies':
-                window.imaginalOS.runPolicy();
+                os.runPolicy();
                 break;
-            case 'date': {
-                let out = new Date().toString() + '<br>';
-                const td = window.telemetryData;
-                if (td.sunrise && td.sunset) {
-                    out += `☀️ <b>Solar Ephemeris for ${escapeHtml(td.city)}:</b><br>`;
-                    out += `   Sunrise: <span class="neokey">${td.sunrise}</span> (local time)<br>`;
-                    out += `   Sunset:  <span class="neokey">${td.sunset}</span> (local time)<br>`;
-                }
-                writeOutput(out);
+            case 'date':
+                os.runDate();
                 break;
-            }
             case 'game':
             case 'spacerock':
             case 'spacerocks':
             case 'asteroids':
-                if (window.imaginalOS.runSpaceRock) {
-                    window.imaginalOS.runSpaceRock();
-                } else {
-                    writeOutput("<span class='err'>game: failed to load game module</span><br>");
-                }
+                os.runGame();
                 break;
             case 'matrix':
-                window.imaginalOS.startMatrix();
+                os.startMatrix();
                 break;
             case 'git':
             case 'github':
-                await window.imaginalOS.writeTyped(`🐱 <span class="secret-title">[GITHUB REDIRECT]</span><br>Bypassing firewalls to reach creator profile: <span class="cmd">https://github.com/credimusin</span><br>`, 5);
-                window.open('https://github.com/credimusin', '_blank');
+                await os.runGit();
                 break;
             case 'tg':
             case 'telegram':
-                await window.imaginalOS.writeTyped(`✈️ <span class="secret-title">[TELEGRAM REDIRECT]</span><br>Establishing secure link to chat frequency: <span class="cmd">https://t.me/credimusin</span><br>`, 5);
-                window.open('https://t.me/credimusin', '_blank');
+                await os.runTelegram();
                 break;
             case 'bmo':
-                window.imaginalOS.runBmoEasterEgg();
+                os.runBmoEasterEgg();
                 break;
             case 'gpg':
-                await window.imaginalOS.runGpg();
+                await os.runGpg();
                 break;
             case 'secret':
-                window.imaginalOS.runSecretCheck(args);
+                os.runSecretCheck(args);
                 break;
             case 'sudo':
-                if (args.join(' ').includes('rm -rf')) {
-                    window.imaginalOS.runDestruct();
-                } else {
-                    window.imaginalOS.shellState = 'sudo_password';
-                    sudoAttempts = 0;
-                    terminalPromptSymbol.innerHTML = getPromptString();
-                    await window.imaginalOS.writeTyped(`🔐 <span class="secret-title">[SUPERUSER SECURITY CHECK]</span><br>System authentication requested. (Secret password hint: <span class="file">bmo</span>)<br>`, 6);
-                }
+                await os.runSudo(args);
                 break;
             case 'exit':
             case 'close':
@@ -574,9 +523,9 @@
                 break;
             default:
                 playBeepSound(300, 0.1, 'sine');
-                writeOutput(`<span class="err">bush: command not found: ${escapeHtml(cmd)}</span>. Type 'help' for options.<br>`);
+                writeOutput(`<span class="err">bush: command not found: ${os.escapeHtml(cmd)}</span>. Type 'help' for options.<br>`);
         }
-        
+
         const cmdEl = document.getElementById(cmdId);
         if (cmdEl && terminalOutput) {
             terminalOutput.scrollTop = Math.max(0, cmdEl.offsetTop - 10);
@@ -644,8 +593,7 @@
         
         if (parts.length === 1) {
             const cmd = parts[0].toLowerCase();
-            const commands = ['help', 'commands', 'ls', 'cd', 'cat', 'bat', 'pwd', 'uname', 'history', 'echo', 'mkdir', 'touch', 'rm', 'vim', 'banano', 'nano', 'edit', 'open', 'neofetch', 'harvester', 'scan', 'weather', 'whoami', 'matrix', 'clear', 'time', 'mute', 'unmute', 'date', 'exit', 'close', 'sudo', 'git', 'github', 'tg', 'telegram', 'bmo', 'secret', 'ip', 'pass', 'cookie', 'cookies', 'policy', 'policies', 'tips', 'spacerock', 'spacerocks', 'asteroids', 'game', 'gpg'];
-            const matches = commands.filter(c => c.startsWith(cmd));
+            const matches = window.imaginalOS.ALL_COMMAND_NAMES.filter(c => c.startsWith(cmd));
             if (matches.length === 1) {
                 terminalInput.value = matches[0] + ' ';
                 syncInputBuffer();
@@ -656,7 +604,7 @@
             const arg = parts[1];
             
             const res = window.imaginalOS.resolvePath('.');
-            if (res.node && res.node.children) {
+            if (window.imaginalOS.hasChildren(res.node)) {
                 const names = Object.keys(res.node.children);
                 const matches = names.filter(n => n.startsWith(arg));
                 if (matches.length === 1) {
@@ -695,12 +643,28 @@
         
         if (terminalOutput.innerHTML === '') {
             writeOutput(`Welcome to my imaginal website.
-You are using ImaginalOS v${window.imaginalOS.VERSION || '0.9.1'}-potato.
+You are using ImaginalOS v${window.imaginalOS.VERSION}-potato.
 Administrator: BMO
 `);
         }
         
         resetHintTimer();
+    }
+
+    // Anything that takes over the terminal body (editor, game, screensaver)
+    // has to be torn down when the window goes away, otherwise it keeps
+    // running - and keeps swallowing keystrokes - behind a closed window.
+    function closeImmersiveModes() {
+        const os = window.imaginalOS;
+        if (os.isMatrixActive && os.isMatrixActive()) {
+            os.stopMatrix();
+        }
+        if (os.shellState === 'vim' && os.closeVimEditor) {
+            os.closeVimEditor();
+        }
+        if (os.shellState === 'spacerock' && os.stopSpaceRock) {
+            os.stopSpaceRock();
+        }
     }
 
     function closeTerminal() {
@@ -709,12 +673,7 @@ Administrator: BMO
             terminalContainer.classList.remove('minimized');
             terminalContainer.classList.remove('maximized');
             if (terminalInput) terminalInput.blur();
-            if (window.imaginalOS.isMatrixActive && window.imaginalOS.isMatrixActive()) {
-                window.imaginalOS.stopMatrix();
-            }
-            if (window.imaginalOS.closeVimEditor && window.imaginalOS.shellState === 'vim') {
-                window.imaginalOS.closeVimEditor();
-            }
+            closeImmersiveModes();
             if (window.imaginalOS.onTerminalClose) {
                 window.imaginalOS.onTerminalClose();
             }
@@ -734,6 +693,7 @@ Administrator: BMO
     function toggleMinimize() {
         terminalContainer.classList.toggle('minimized');
         if (terminalContainer.classList.contains('minimized')) {
+            closeImmersiveModes();
             stopHintsSystem();
             if (window.imaginalOS.onTerminalClose) {
                 window.imaginalOS.onTerminalClose();
@@ -749,6 +709,9 @@ Administrator: BMO
 
     function toggleMaximize() {
         terminalContainer.classList.toggle('maximized');
+        if (window.imaginalOS.bringToFront) {
+            window.imaginalOS.bringToFront(terminalContainer);
+        }
         terminalInput.focus();
     }
 
@@ -779,13 +742,10 @@ Administrator: BMO
 
     // Expose on global namespace
     window.imaginalOS.writeOutput = writeOutput;
-    window.imaginalOS.escapeHtml = escapeHtml;
     window.imaginalOS.getPromptString = getPromptString;
     window.imaginalOS.wrapEmoji = wrapEmoji;
     window.imaginalOS.openTerminal = openTerminal;
     window.imaginalOS.closeTerminal = closeTerminal;
     window.imaginalOS.toggleTerminal = toggleTerminal;
     window.toggleTerminal = toggleTerminal;
-    window.openTerminal = openTerminal;
-    window.closeTerminal = closeTerminal;
 })();

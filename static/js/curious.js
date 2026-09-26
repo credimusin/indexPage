@@ -12,7 +12,6 @@
     let isMenuOpen = false;
     let isRevealed = false;
     let menuListContainer = null;
-    let subListContainer = null;
 
     // Movement tracking state (~x2 threshold)
     let totalDist = 0;
@@ -20,16 +19,6 @@
     let lastX = null;
     let lastY = null;
     let lastAngle = null;
-
-    function escapeHtml(text) {
-        if (typeof text !== 'string') return '';
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 
     let vfsLoadingPromise = null;
     function ensureVFS() {
@@ -179,29 +168,29 @@
                 const folderHeader = document.createElement('div');
                 folderHeader.className = 'curious-accordion-header';
                 folderHeader.innerHTML = `
-                    <span class="item-name">${escapeHtml(item.name)}</span>
+                    <span class="item-name">${window.imaginalOS.escapeHtml(item.name)}</span>
                     <span class="accordion-arrow">▼</span>
                 `;
 
-                subListContainer = document.createElement('div');
-                subListContainer.className = 'curious-sub-list';
-                renderProjectsSublist(subListContainer);
+                const subList = document.createElement('div');
+                subList.className = 'curious-sub-list';
+                renderProjectsSublist(subList);
 
                 folderHeader.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isExpanding = !folderHeader.classList.contains('expanded');
                     if (isExpanding) {
-                        renderProjectsSublist(subListContainer);
+                        renderProjectsSublist(subList);
                     }
                     folderHeader.classList.toggle('expanded');
-                    subListContainer.classList.toggle('expanded');
+                    subList.classList.toggle('expanded');
                     if (window.imaginalOS.playBeepSound) {
                         window.imaginalOS.playBeepSound(800, 0.04, 'sine');
                     }
                 });
 
                 container.appendChild(folderHeader);
-                container.appendChild(subListContainer);
+                container.appendChild(subList);
             } else {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'curious-item';
@@ -213,49 +202,42 @@
         });
     }
 
+    // Link rules for the document viewer. Input must already be escaped.
+    const TERM_LINK_STYLE = 'color: #64ffda; text-decoration: underline; cursor: pointer;';
+    const termLink = (href, label) => `<a href="${href}" target="_blank" rel="noopener noreferrer" class="term-link" style="${TERM_LINK_STYLE}">${label}</a>`;
+
     function formatDocContent(text) {
-        let escaped = escapeHtml(text);
+        let escaped = window.imaginalOS.escapeHtml(text);
 
-        // Convert standard URLs
-        escaped = escaped.replace(/(https?:\/\/[^\s&<"';()]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="term-link">$1</a>');
-
-        // Convert github / t.me links without protocol
-        escaped = escaped.replace(/(^|\s)(github\.com\/[^\s&<"';()]+)/g, '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="term-link">$2</a>');
-        escaped = escaped.replace(/(^|\s)(t\.me\/[^\s&<"';()]+)/g, '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" class="term-link">$2</a>');
-
-        // Convert telegram handles
-        escaped = escaped.replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g, '$1<a href="https://t.me/$2" target="_blank" rel="noopener noreferrer" class="term-link">@$2</a>');
-
-        // Convert emails
-        escaped = escaped.replace(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g, '<a href="mailto:$1" class="term-link">$1</a>');
+        escaped = escaped.replace(/(https?:\/\/[^\s&<"';()]+)/g, (url) => termLink(url, url));
+        // Bare github.com / t.me references that carry no protocol
+        escaped = escaped.replace(/(^|\s)(github\.com\/[^\s&<"';()]+)/g,
+            (match, lead, bare) => lead + termLink(`https://${bare}`, bare));
+        escaped = escaped.replace(/(^|\s)(t\.me\/[^\s&<"';()]+)/g,
+            (match, lead, bare) => lead + termLink(`https://${bare}`, bare));
+        escaped = escaped.replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g,
+            (match, lead, handle) => lead + termLink(`https://t.me/${handle}`, `@${handle}`));
+        escaped = escaped.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+            (mail) => termLink(`mailto:${mail}`, mail));
 
         return escaped;
     }
 
     async function loadFileContent(filePath) {
-        const res = window.imaginalOS.resolvePath ? window.imaginalOS.resolvePath(filePath) : null;
+        const res = window.imaginalOS.resolvePath(filePath);
         if (res && res.node && res.node.content !== undefined && !res.node.content.startsWith('IMAGE:')) {
             return res.node.content;
         }
 
-        let contentPath = res?.node?.contentPath;
-        if (!contentPath) {
-            contentPath = 'static/vfs/' + filePath.replace(/^\/?home\/bmo\//, '');
+        if (res && res.node) {
+            return (await window.imaginalOS.loadNodeContent(res.node)) || '[Error: Could not load document content]';
         }
 
-        const fetchUrl = contentPath.startsWith('/') ? contentPath : '/' + contentPath;
+        // The VFS was not available; fall back to the on-disk catalogue path.
+        const contentPath = 'static/vfs/' + filePath.replace(/^\/?home\/bmo\//, '');
         try {
-            const response = await fetch(fetchUrl);
-            if (response.ok) {
-                const text = await response.text();
-                if (res && res.node) {
-                    res.node.content = text;
-                    if (window.imaginalOS.saveVFS) {
-                        window.imaginalOS.saveVFS(window.imaginalOS.filesystem);
-                    }
-                }
-                return text;
-            }
+            const response = await fetch('/' + contentPath);
+            if (response.ok) return await response.text();
         } catch {}
         return '[Error: Could not load document content]';
     }
@@ -346,7 +328,7 @@
         window.imaginalOS.topZIndex = Math.max(window.imaginalOS.topZIndex || 9999, 10000) + 2;
         el.style.zIndex = window.imaginalOS.topZIndex;
     }
-    window.imaginalOS.bringToFront = window.imaginalOS.bringToFront || bringToFront;
+    window.imaginalOS.bringToFront = bringToFront;
 
     function makeWindowDraggable(winEl, headerEl) {
         let isDragging = false;
@@ -371,7 +353,7 @@
             winEl.style.left = `${initialLeft}px`;
             winEl.style.top = `${initialTop}px`;
 
-            const onMouseMove = (moveEvent) => {
+            const onDragMove = (moveEvent) => {
                 if (!isDragging) return;
                 const dx = moveEvent.clientX - startX;
                 const dy = moveEvent.clientY - startY;
@@ -379,17 +361,17 @@
                 winEl.style.top = `${Math.max(10, Math.min(window.innerHeight - 60, initialTop + dy))}px`;
             };
 
-            const onMouseUp = () => {
+            const onDragEnd = () => {
                 isDragging = false;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
+                document.removeEventListener('mousemove', onDragMove);
+                document.removeEventListener('mouseup', onDragEnd);
             };
 
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
         });
     }
-    window.imaginalOS.makeWindowDraggable = window.imaginalOS.makeWindowDraggable || makeWindowDraggable;
+    window.imaginalOS.makeWindowDraggable = makeWindowDraggable;
 
     function closeDocViewerAnimated(win) {
         if (!win) return Promise.resolve();
@@ -416,7 +398,7 @@
             if (win.parentNode) win.remove();
             return;
         }
-        closeDocViewerAnimated(win);
+        return closeDocViewerAnimated(win);
     }
 
     function onTerminalOpen() {
@@ -455,10 +437,11 @@
         const prevWin = docViewerEl;
         docViewerEl = null;
 
-        // Fetch content and close previous window in parallel
+        // The VFS has to be in place before the path can be resolved, and the
+        // old window is torn down while the document is being fetched.
+        await ensureVFS();
         const [rawContent] = await Promise.all([
             loadFileContent(filePath),
-            ensureVFS(),
             closeDocViewerAnimated(prevWin)
         ]);
 
@@ -478,7 +461,7 @@
                     <span class="dot minimize" title="Minimize"></span>
                     <span class="dot maximize" title="Maximize"></span>
                 </div>
-                <div class="terminal-title">${escapeHtml(docTitle)}</div>
+                <div class="terminal-title">${window.imaginalOS.escapeHtml(docTitle)}</div>
                 <div style="width: 50px;"></div>
             </div>
             <div class="terminal-body">
@@ -762,5 +745,4 @@
     window.imaginalOS.initCurious = initCurious;
     window.imaginalOS.showDocumentViewer = showDocumentViewer;
     window.imaginalOS.destroyDocViewer = destroyDocViewer;
-    window.imaginalOS.getProjectItems = getProjectItems;
 })();

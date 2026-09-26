@@ -2,6 +2,11 @@
  * imaginalOS - Spacerock Retro Arcade Game Module
  */
 (function() {
+    const FRAME_MS = 1000 / 60;
+    const MIN_CANVAS = 320;
+    const MAX_CANVAS_W = 800;
+    const MAX_CANVAS_H = 450;
+
     let canvas = null;
     let ctx = null;
     let gameEl = null;
@@ -20,6 +25,8 @@
     let isTransitioningLevel = false;
     let levelTransitionTimer = 0;
     let countdownTimer = 0;
+    let lastFrameTime = 0;
+    let frameScale = 1;
 
     // Helper to play beeps using the synth engine from sound.js
     function playBeep(freq, duration, type) {
@@ -29,8 +36,13 @@
     }
 
     function launchSpaceRock() {
+        // Never stack two arcade sessions on the same terminal body.
+        if (gameActive) {
+            exitGame();
+        }
+
         window.imaginalOS.shellState = 'spacerock';
-        
+
         // Hide terminal output, input, and hint bar
         window.imaginalOS.terminalOutput.style.display = 'none';
         window.imaginalOS.terminalInput.parentNode.style.display = 'none';
@@ -48,14 +60,14 @@
         `;
         window.imaginalOS.terminalContainer.querySelector('.terminal-body').appendChild(gameEl);
 
-        canvas = document.getElementById('spacerockCanvas');
+        canvas = gameEl.querySelector('#spacerockCanvas');
         const parent = canvas.parentElement;
-        
-        // Fit canvas to terminal size nicely
-        const width = Math.min(800, parent.clientWidth - 20);
-        const height = Math.min(450, parent.clientHeight - 20);
-        canvas.width = width;
-        canvas.height = height;
+
+        // Fit canvas to terminal size nicely. The lower bound matters: a tiny or
+        // minimised terminal would otherwise hand canvas.width a negative
+        // number, which the DOM converts into an unsigned 4-gigabyte bitmap.
+        canvas.width = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS_W, parent.clientWidth - 20));
+        canvas.height = Math.max(MIN_CANVAS, Math.min(MAX_CANVAS_H, parent.clientHeight - 20));
 
         ctx = canvas.getContext('2d');
         gameActive = true;
@@ -68,6 +80,8 @@
         particles = [];
         isTransitioningLevel = false;
         keys = {};
+        lastFrameTime = 0;
+        frameScale = 1;
 
         highScore = parseInt(localStorage.getItem('imaginalOS_spacerock_highscore')) || 0;
 
@@ -145,58 +159,36 @@
 
     function handleKeyDown(e) {
         const gameKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'w', 'a', 's', 'd', 'p', 'q', 'Escape', 'Enter'];
-        if (gameKeys.includes(e.key) || gameKeys.includes(e.key.toLowerCase())) {
+        const key = e.key.toLowerCase();
+        if (gameKeys.includes(e.key) || gameKeys.includes(key)) {
             e.preventDefault();
         }
 
-        const key = e.key.toLowerCase();
         keys[e.key] = true;
         keys[key] = true;
 
-        if (gameState === 'MENU') {
+        const wantsExit = key === 'q' || e.key === 'Escape';
+
+        if (wantsExit) {
+            exitGame();
+            return;
+        }
+
+        if (gameState === 'MENU' || gameState === 'GAMEOVER') {
             if (e.key === 'Enter') {
-                gameState = 'COUNTDOWN';
-                countdownTimer = 180; // 3 seconds at 60fps
-                score = 0;
-                lives = 3;
-                level = 1;
-                resetShip();
-                spawnAsteroids(4);
-                playBeep(370, 0.1, 'sine');
-            } else if (key === 'q' || e.key === 'Escape') {
-                exitGame();
+                startRound();
             }
-        } else if (gameState === 'COUNTDOWN') {
-            if (key === 'q' || e.key === 'Escape') {
-                exitGame();
-            }
-        } else if (gameState === 'PLAYING') {
-            if (key === 'p') {
-                gameState = 'PAUSED';
-                playBeep(440, 0.12, 'sine');
-            } else if (key === 'q' || e.key === 'Escape') {
-                exitGame();
-            }
-        } else if (gameState === 'PAUSED') {
-            if (key === 'p' || e.key === 'Enter') {
-                gameState = 'PLAYING';
-                playBeep(587.33, 0.12, 'sine');
-            } else if (key === 'q' || e.key === 'Escape') {
-                exitGame();
-            }
-        } else if (gameState === 'GAMEOVER') {
-            if (e.key === 'Enter') {
-                gameState = 'COUNTDOWN';
-                countdownTimer = 180;
-                score = 0;
-                lives = 3;
-                level = 1;
-                resetShip();
-                spawnAsteroids(4);
-                playBeep(370, 0.1, 'sine');
-            } else if (key === 'q' || e.key === 'Escape') {
-                exitGame();
-            }
+            return;
+        }
+
+        if (gameState === 'COUNTDOWN') return;
+
+        if (gameState === 'PLAYING' && key === 'p') {
+            gameState = 'PAUSED';
+            playBeep(440, 0.12, 'sine');
+        } else if (gameState === 'PAUSED' && (key === 'p' || e.key === 'Enter')) {
+            gameState = 'PLAYING';
+            playBeep(587.33, 0.12, 'sine');
         }
     }
 
@@ -209,13 +201,14 @@
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
     }
-
     function unbindEvents() {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
     }
 
     function exitGame() {
+        if (!gameActive) return;
+
         gameActive = false;
         unbindEvents();
         if (animationFrameId) {
@@ -238,12 +231,26 @@
         }
 
         window.imaginalOS.writeOutput(`🤖 <b>[Arcade Mode Terminated]</b><br>Final Score: <span class="neokey">${score}</span> | High Score: <span class="file">${highScore}</span><br>`);
-        
+
         window.imaginalOS.terminalInput.focus();
         window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
     }
 
-    function tick() {
+    // The simulation below is authored in 60fps units. Measuring the real frame
+    // time and scaling by it keeps the game identical on 60Hz, 120Hz and on
+    // machines that drop frames, instead of running at double or half speed.
+    function measureFrameScale(now) {
+        if (!lastFrameTime) {
+            lastFrameTime = now;
+            return;
+        }
+        // Clamp so a background tab or a long stall cannot teleport the ship.
+        const elapsed = Math.min(now - lastFrameTime, FRAME_MS * 5);
+        lastFrameTime = now;
+        frameScale = elapsed / FRAME_MS;
+    }
+
+    function tick(now) {
         if (!gameActive) return;
 
         // Auto-cleanup check
@@ -252,30 +259,48 @@
             return;
         }
 
+        measureFrameScale(now || performance.now());
+
         update();
         draw();
 
         animationFrameId = requestAnimationFrame(tick);
     }
 
+    function wrapAsteroid(a) {
+        if (a.x < -a.radius) a.x = canvas.width + a.radius;
+        if (a.x > canvas.width + a.radius) a.x = -a.radius;
+        if (a.y < -a.radius) a.y = canvas.height + a.radius;
+        if (a.y > canvas.height + a.radius) a.y = -a.radius;
+    }
+
+    function startRound() {
+        gameState = 'COUNTDOWN';
+        countdownTimer = 180; // 3 seconds at 60fps
+        score = 0;
+        lives = 3;
+        level = 1;
+        resetShip();
+        spawnAsteroids(4);
+        playBeep(370, 0.1, 'sine');
+    }
+
     function update() {
+        const dt = frameScale;
+
         if (gameState === 'COUNTDOWN') {
             // Let asteroids drift in background
             for (let i = 0; i < asteroids.length; i++) {
                 const a = asteroids[i];
-                a.x += a.vx;
-                a.y += a.vy;
-
-                if (a.x < -a.radius) a.x = canvas.width + a.radius;
-                if (a.x > canvas.width + a.radius) a.x = -a.radius;
-                if (a.y < -a.radius) a.y = canvas.height + a.radius;
-                if (a.y > canvas.height + a.radius) a.y = -a.radius;
+                a.x += a.vx * dt;
+                a.y += a.vy * dt;
+                wrapAsteroid(a);
             }
             updateParticles();
 
             // Countdown audio triggers
             const currentSec = Math.ceil(countdownTimer / 60);
-            countdownTimer--;
+            countdownTimer -= dt;
             const nextSec = Math.ceil(countdownTimer / 60);
 
             if (currentSec !== nextSec) {
@@ -301,56 +326,20 @@
         let rotDir = 0;
         if (keys['ArrowLeft'] || keys['a']) rotDir -= 1;
         if (keys['ArrowRight'] || keys['d']) rotDir += 1;
-        ship.angle += rotDir * 0.055;
+        ship.angle += rotDir * 0.055 * dt;
 
         // 2. Thrust ship
         ship.thrusting = keys['ArrowUp'] || keys['w'];
         if (ship.thrusting) {
-            ship.vx += Math.cos(ship.angle) * 0.125;
-            ship.vy += Math.sin(ship.angle) * 0.125;
-
-            // Engine particles spawning from both engines
-            const R = ship.radius;
-            const cos = Math.cos(ship.angle);
-            const sin = Math.sin(ship.angle);
-            
-            if (Math.random() < 0.6) {
-                const tailAngle = ship.angle + Math.PI + (Math.random() * 0.35 - 0.175);
-                const exhaustSpeed = 1.0 + Math.random() * 1.5;
-                
-                // Left engine nozzle
-                const lx = ship.x - R * 0.85 * cos + R * 0.08 * sin;
-                const ly = ship.y - R * 0.85 * sin - R * 0.08 * cos;
-                particles.push({
-                    x: lx,
-                    y: ly,
-                    vx: Math.cos(tailAngle) * exhaustSpeed + ship.vx,
-                    vy: Math.sin(tailAngle) * exhaustSpeed + ship.vy,
-                    color: '#ff79c6',
-                    alpha: 0.9,
-                    decay: 0.045 + Math.random() * 0.045,
-                    size: 1 + Math.random() * 1.8
-                });
-
-                // Right engine nozzle
-                const rx = ship.x - R * 0.85 * cos - R * 0.08 * sin;
-                const ry = ship.y - R * 0.85 * sin + R * 0.08 * cos;
-                particles.push({
-                    x: rx,
-                    y: ry,
-                    vx: Math.cos(tailAngle) * exhaustSpeed + ship.vx,
-                    vy: Math.sin(tailAngle) * exhaustSpeed + ship.vy,
-                    color: '#ff79c6',
-                    alpha: 0.9,
-                    decay: 0.045 + Math.random() * 0.045,
-                    size: 1 + Math.random() * 1.8
-                });
-            }
+            ship.vx += Math.cos(ship.angle) * 0.125 * dt;
+            ship.vy += Math.sin(ship.angle) * 0.125 * dt;
+            spawnEngineExhaust();
         }
 
         // Damping (Friction)
-        ship.vx *= 0.985;
-        ship.vy *= 0.985;
+        const damping = Math.pow(0.985, dt);
+        ship.vx *= damping;
+        ship.vy *= damping;
 
         // Speed cap
         const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
@@ -361,8 +350,8 @@
         }
 
         // Apply movement
-        ship.x += ship.vx;
-        ship.y += ship.vy;
+        ship.x += ship.vx * dt;
+        ship.y += ship.vy * dt;
 
         // Wrap edges
         if (ship.x < -ship.radius) ship.x = canvas.width + ship.radius;
@@ -372,59 +361,25 @@
 
         // Invuln timer
         if (ship.invulnerableTime > 0) {
-            ship.invulnerableTime--;
+            ship.invulnerableTime -= dt;
         }
 
         // 3. Fire Lasers
         if (ship.shootCooldown > 0) {
-            ship.shootCooldown--;
+            ship.shootCooldown -= dt;
         }
 
-        if (keys[' '] && ship.shootCooldown === 0) {
-            const R = ship.radius;
-            const cos = Math.cos(ship.angle);
-            const sin = Math.sin(ship.angle);
-            const laserSpeed = 8.0;
-            
-            // Left wing gun tip
-            const lx = ship.x + (R * 0.25) * cos - (-R * 0.75) * sin;
-            const ly = ship.y + (R * 0.25) * sin + (-R * 0.75) * cos;
-            
-            // Right wing gun tip
-            const rx = ship.x + (R * 0.25) * cos - (R * 0.75) * sin;
-            const ry = ship.y + (R * 0.25) * sin + (R * 0.75) * cos;
-
-            // Push left laser
-            lasers.push({
-                x: lx,
-                y: ly,
-                vx: cos * laserSpeed + ship.vx * 0.35,
-                vy: sin * laserSpeed + ship.vy * 0.35,
-                life: 48
-            });
-
-            // Push right laser
-            lasers.push({
-                x: rx,
-                y: ry,
-                vx: cos * laserSpeed + ship.vx * 0.35,
-                vy: sin * laserSpeed + ship.vy * 0.35,
-                life: 48
-            });
-
-            ship.shootCooldown = 14; // shoot cooldown
-
-            // Dual shot retro beep effects
-            playBeep(720, 0.03, 'sine');
-            setTimeout(() => playBeep(720, 0.03, 'sine'), 40);
+        if (keys[' '] && ship.shootCooldown <= 0) {
+            fireLasers();
+            ship.shootCooldown = 14; // shoot cooldown, in 60fps frames
         }
 
         // 4. Update lasers
         for (let i = lasers.length - 1; i >= 0; i--) {
             const l = lasers[i];
-            l.x += l.vx;
-            l.y += l.vy;
-            l.life--;
+            l.x += l.vx * dt;
+            l.y += l.vy * dt;
+            l.life -= dt;
 
             if (l.x < 0) l.x = canvas.width;
             if (l.x > canvas.width) l.x = 0;
@@ -439,13 +394,9 @@
         // 5. Update asteroids
         for (let i = 0; i < asteroids.length; i++) {
             const a = asteroids[i];
-            a.x += a.vx;
-            a.y += a.vy;
-
-            if (a.x < -a.radius) a.x = canvas.width + a.radius;
-            if (a.x > canvas.width + a.radius) a.x = -a.radius;
-            if (a.y < -a.radius) a.y = canvas.height + a.radius;
-            if (a.y > canvas.height + a.radius) a.y = -a.radius;
+            a.x += a.vx * dt;
+            a.y += a.vy * dt;
+            wrapAsteroid(a);
         }
 
         // 6. Update particles
@@ -465,7 +416,7 @@
         }
 
         // 8. Hit detection: Ship vs Asteroids
-        if (ship.invulnerableTime === 0) {
+        if (ship.invulnerableTime <= 0) {
             for (let i = 0; i < asteroids.length; i++) {
                 const a = asteroids[i];
                 if (distBetweenPoints(ship.x, ship.y, a.x, a.y) < ship.radius + a.radius) {
@@ -482,7 +433,7 @@
         }
 
         if (isTransitioningLevel) {
-            levelTransitionTimer--;
+            levelTransitionTimer -= dt;
             if (levelTransitionTimer <= 0) {
                 level++;
                 isTransitioningLevel = false;
@@ -493,6 +444,63 @@
                 setTimeout(() => playBeep(720, 0.15, 'sine'), 160);
             }
         }
+    }
+
+    // Engine particles spawning from both nozzles
+    function spawnEngineExhaust() {
+        if (Math.random() >= 0.6) return;
+
+        const R = ship.radius;
+        const cos = Math.cos(ship.angle);
+        const sin = Math.sin(ship.angle);
+        const tailAngle = ship.angle + Math.PI + (Math.random() * 0.35 - 0.175);
+        const exhaustSpeed = 1.0 + Math.random() * 1.5;
+
+        const nozzles = [
+            { x: ship.x - R * 0.85 * cos + R * 0.08 * sin, y: ship.y - R * 0.85 * sin - R * 0.08 * cos },
+            { x: ship.x - R * 0.85 * cos - R * 0.08 * sin, y: ship.y - R * 0.85 * sin + R * 0.08 * cos }
+        ];
+
+        for (const nozzle of nozzles) {
+            particles.push({
+                x: nozzle.x,
+                y: nozzle.y,
+                vx: Math.cos(tailAngle) * exhaustSpeed + ship.vx,
+                vy: Math.sin(tailAngle) * exhaustSpeed + ship.vy,
+                color: '#ff79c6',
+                alpha: 0.9,
+                decay: 0.045 + Math.random() * 0.045,
+                size: 1 + Math.random() * 1.8
+            });
+        }
+    }
+
+    function fireLasers() {
+        const R = ship.radius;
+        const cos = Math.cos(ship.angle);
+        const sin = Math.sin(ship.angle);
+        const laserSpeed = 8.0;
+
+        // Left wing gun tip
+        const lx = ship.x + (R * 0.25) * cos - (-R * 0.75) * sin;
+        const ly = ship.y + (R * 0.25) * sin + (-R * 0.75) * cos;
+
+        // Right wing gun tip
+        const rx = ship.x + (R * 0.25) * cos - (R * 0.75) * sin;
+        const ry = ship.y + (R * 0.25) * sin + (R * 0.75) * cos;
+
+        for (const [x, y] of [[lx, ly], [rx, ry]]) {
+            lasers.push({
+                x, y,
+                vx: cos * laserSpeed + ship.vx * 0.35,
+                vy: sin * laserSpeed + ship.vy * 0.35,
+                life: 48
+            });
+        }
+
+        // Dual shot retro beep effects
+        playBeep(720, 0.03, 'sine');
+        setTimeout(() => playBeep(720, 0.03, 'sine'), 40);
     }
 
     function splitAsteroid(idx) {
@@ -958,4 +966,5 @@
 
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.runSpaceRock = launchSpaceRock;
+    window.imaginalOS.stopSpaceRock = exitGame;
 })();
