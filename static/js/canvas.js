@@ -456,44 +456,42 @@
         </svg>`;
     }
 
-    function initTooltip() {
-        let tooltip = document.getElementById('celestial-tooltip');
-        if (!tooltip) {
-            tooltip = document.createElement('div');
-            tooltip.id = 'celestial-tooltip';
-            document.body.appendChild(tooltip);
-        }
-    }
+    function getCelestialInfo() {
+        const now = new Date();
+        const currentHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+        const startSun = 5.0;
+        const endSun = 20.5;
+        const isDay = currentHour >= startSun && currentHour < endSun;
 
-    function updateTooltipText(isDay) {
-        const tooltip = document.getElementById('celestial-tooltip');
-        if (!tooltip) return;
-        
         if (isDay) {
-            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+            const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
             const kpVal = (2.5 + 2.0 * Math.sin(dayOfYear * 0.04) + Math.sin(dayOfYear * 0.15)).toFixed(1);
             let desc = "Quiet";
             if (parseFloat(kpVal) > 4.0) desc = "Active (G1)";
             if (parseFloat(kpVal) > 5.5) desc = "Moderate Storm (G2)";
             const windSpeed = Math.floor(380 + 120 * Math.sin(dayOfYear * 0.05));
-            
-            tooltip.innerHTML = `
-                <div class="tooltip-title">☀ SOLAR OBSERVATORY</div>
-                <div>Kp-Index: ${kpVal} (${desc})</div>
-                <div>Wind Speed: ${windSpeed} km/s</div>
-                <div>Flux Level: 145 SFU</div>
-            `;
+
+            return {
+                type: 'sun',
+                isDay: true,
+                title: 'SOLAR OBSERVATORY',
+                kpIndex: `${kpVal} (${desc})`,
+                windSpeed: `${windSpeed} km/s`,
+                fluxLevel: '145 SFU'
+            };
         } else {
-            const now = new Date();
             const phase = getMoonPhase(now.getFullYear(), now.getMonth() + 1, now.getDate());
             const name = MOON_PHASE_NAMES[phase];
             const illum = MOON_PHASE_ILLUM[phase];
-            tooltip.innerHTML = `
-                <div class="tooltip-title">🌙 LUNAR OBSERVATORY</div>
-                <div>Phase: ${name}</div>
-                <div>Illumination: ${illum}%</div>
-                <div>Tidal Pull: ${illum > 80 ? 'Spring' : 'Neap'}</div>
-            `;
+
+            return {
+                type: 'moon',
+                isDay: false,
+                title: 'LUNAR OBSERVATORY',
+                phase: name,
+                illumination: `${illum}%`,
+                tidalPull: illum > 80 ? 'Spring' : 'Neap'
+            };
         }
     }
 
@@ -506,24 +504,6 @@
             bodyEl = document.createElement('div');
             bodyEl.className = 'celestial';
             mainDiv.insertBefore(bodyEl, mainDiv.firstChild);
-            
-            const tooltip = document.getElementById('celestial-tooltip');
-            bodyEl.addEventListener('mouseenter', () => {
-                if (tooltip) {
-                    const isCurrentDay = bodyEl.classList.contains('sun');
-                    updateTooltipText(isCurrentDay);
-                    tooltip.classList.add('visible');
-                }
-            });
-            bodyEl.addEventListener('mousemove', (e) => {
-                if (tooltip) {
-                    tooltip.style.left = (e.clientX + 15) + 'px';
-                    tooltip.style.top = (e.clientY + 15) + 'px';
-                }
-            });
-            bodyEl.addEventListener('mouseleave', () => {
-                if (tooltip) tooltip.classList.remove('visible');
-            });
         }
         
         const startSun = 5.0;
@@ -1195,5 +1175,5 @@
     }
 
     window.imaginalOS.initWeatherCanvas = initWeatherCanvas;
-    window.imaginalOS.initTooltip = initTooltip;
+    window.imaginalOS.getCelestialInfo = getCelestialInfo;
 })();

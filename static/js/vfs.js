@@ -157,7 +157,28 @@
             if (savedVersion === String(VFS_VERSION)) {
                 const saved = localStorage.getItem('imaginal_vfs');
                 if (saved) {
-                    return JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    try {
+                        const defBmo = defaultVFS.children.home.children.bmo.children;
+                        const savedBmo = parsed.children.home.children.bmo.children;
+                        if (defBmo && savedBmo) {
+                            for (const k in defBmo) {
+                                if (!savedBmo[k]) {
+                                    savedBmo[k] = structuredClone(defBmo[k]);
+                                }
+                            }
+                            const defProj = defBmo.projects && defBmo.projects.children;
+                            const savedProj = savedBmo.projects && savedBmo.projects.children;
+                            if (defProj && savedProj) {
+                                for (const pk in defProj) {
+                                    if (!savedProj[pk]) {
+                                        savedProj[pk] = structuredClone(defProj[pk]);
+                                    }
+                                }
+                            }
+                        }
+                    } catch {}
+                    return parsed;
                 }
             }
         } catch {}
@@ -207,6 +228,7 @@
 
     // Expose on global namespace
     window.imaginalOS = window.imaginalOS || {};
+    window.imaginalOS.defaultVFS = defaultVFS;
     window.imaginalOS.filesystem = loadVFS();
     window.imaginalOS.currentPath = ['home', 'bmo'];
     window.imaginalOS.saveVFS = saveVFS;

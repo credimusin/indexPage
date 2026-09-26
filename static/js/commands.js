@@ -672,6 +672,21 @@
             out += `Precipitation Sum:  ${td.precipitation || '0.0 mm'}<br>`;
         }
         
+        const celestial = window.imaginalOS.getCelestialInfo ? window.imaginalOS.getCelestialInfo() : null;
+        if (celestial) {
+            if (celestial.isDay) {
+                out += `<br><span style="color: #ff9e2c; font-weight: bold;">☀ ${celestial.title}</span><br>`;
+                out += `Kp-Index:           ${celestial.kpIndex}<br>`;
+                out += `Solar Wind Speed:   ${celestial.windSpeed}<br>`;
+                out += `Solar Flux Level:   ${celestial.fluxLevel}<br>`;
+            } else {
+                out += `<br><span style="color: #64ffda; font-weight: bold;">🌙 ${celestial.title}</span><br>`;
+                out += `Moon Phase:         ${celestial.phase}<br>`;
+                out += `Illumination:       ${celestial.illumination}<br>`;
+                out += `Tidal Pull:         ${celestial.tidalPull}<br>`;
+            }
+        }
+        
         const quotes = window.imaginalOS.WEATHER_QUOTES || {};
         let pool = [];
         

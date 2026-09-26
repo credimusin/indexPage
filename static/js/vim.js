@@ -274,12 +274,12 @@
         window.imaginalOS.shellState = 'normal';
 
         // Re-enable console displays
-        window.imaginalOS.terminalOutput.style.display = 'block';
-        window.imaginalOS.terminalInput.parentNode.style.display = 'flex';
+        if (window.imaginalOS.terminalOutput) window.imaginalOS.terminalOutput.style.display = 'block';
+        if (window.imaginalOS.terminalInput && window.imaginalOS.terminalInput.parentNode) window.imaginalOS.terminalInput.parentNode.style.display = 'flex';
         if (window.imaginalOS.terminalHintBar) window.imaginalOS.terminalHintBar.style.display = 'block';
 
-        window.imaginalOS.terminalInput.focus();
-        window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
+        if (window.imaginalOS.terminalInput) window.imaginalOS.terminalInput.focus();
+        if (window.imaginalOS.terminalOutput) window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
     }
 
     function updateVimStatus() {
@@ -299,4 +299,5 @@
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.runVim = runVim;
     window.imaginalOS.handleVimKey = handleVimKey;
+    window.imaginalOS.closeVimEditor = closeVimEditor;
 })();

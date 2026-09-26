@@ -57,7 +57,12 @@
 
     async function loadTerminal() {
         if (terminalLoaded) return true;
-        if (loadingTerminal) return false;
+        if (loadingTerminal) {
+            while (loadingTerminal) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            return terminalLoaded;
+        }
         loadingTerminal = true;
 
         const scripts = [
@@ -72,6 +77,7 @@
 
         try {
             for (const src of scripts) {
+                if (document.querySelector(`script[src="${src}"]`)) continue;
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
                     script.src = src;
@@ -90,12 +96,16 @@
             return false;
         }
     }
+    window.imaginalOS.loadTerminal = loadTerminal;
 
     window.addEventListener('keydown', async (e) => {
         if (terminalLoaded) return;
         
         if (e.key === '`') {
             e.preventDefault();
+            if (window.imaginalOS.onTerminalOpen) {
+                window.imaginalOS.onTerminalOpen();
+            }
             const success = await loadTerminal();
             if (success && window.toggleTerminal) {
                 window.toggleTerminal();
@@ -152,14 +162,14 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         // Initialize subsystems sequentially
-        if (window.imaginalOS && window.imaginalOS.initTooltip) {
-            window.imaginalOS.initTooltip();
-        }
         if (window.imaginalOS && window.imaginalOS.initTelemetry) {
             window.imaginalOS.initTelemetry();
         }
         if (window.imaginalOS && window.imaginalOS.initWeatherCanvas) {
             window.imaginalOS.initWeatherCanvas();
+        }
+        if (window.imaginalOS && window.imaginalOS.initCurious) {
+            window.imaginalOS.initCurious();
         }
 
         updateFavicon();

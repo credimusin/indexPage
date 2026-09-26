@@ -161,6 +161,18 @@
             toggleMaximize();
         });
 
+        // Bring to front on mousedown
+        terminalContainer.addEventListener('mousedown', () => {
+            if (window.imaginalOS.bringToFront) {
+                window.imaginalOS.bringToFront(terminalContainer);
+            }
+        });
+
+        // Enable dragging window by header
+        if (window.imaginalOS.makeWindowDraggable) {
+            window.imaginalOS.makeWindowDraggable(terminalContainer, header);
+        }
+
         // Click on minimized bubble to restore it
         terminalContainer.addEventListener('click', (e) => {
             if (terminalContainer.classList.contains('minimized')) {
@@ -672,6 +684,12 @@
         }
         
         terminalContainer.classList.add('active');
+        if (window.imaginalOS.bringToFront) {
+            window.imaginalOS.bringToFront(terminalContainer);
+        }
+        if (window.imaginalOS.onTerminalOpen) {
+            window.imaginalOS.onTerminalOpen();
+        }
         terminalInput.focus();
         playBeepSound(600, 0.08, 'sine');
         
@@ -690,9 +708,15 @@ Administrator: BMO
             terminalContainer.classList.remove('active');
             terminalContainer.classList.remove('minimized');
             terminalContainer.classList.remove('maximized');
-            terminalInput.blur();
-            if (window.imaginalOS.isMatrixActive()) {
+            if (terminalInput) terminalInput.blur();
+            if (window.imaginalOS.isMatrixActive && window.imaginalOS.isMatrixActive()) {
                 window.imaginalOS.stopMatrix();
+            }
+            if (window.imaginalOS.closeVimEditor && window.imaginalOS.shellState === 'vim') {
+                window.imaginalOS.closeVimEditor();
+            }
+            if (window.imaginalOS.onTerminalClose) {
+                window.imaginalOS.onTerminalClose();
             }
             stopHintsSystem();
             playBeepSound(450, 0.08, 'sine');
@@ -711,9 +735,15 @@ Administrator: BMO
         terminalContainer.classList.toggle('minimized');
         if (terminalContainer.classList.contains('minimized')) {
             stopHintsSystem();
+            if (window.imaginalOS.onTerminalClose) {
+                window.imaginalOS.onTerminalClose();
+            }
         } else {
             terminalInput.focus();
             resetHintTimer();
+            if (window.imaginalOS.onTerminalOpen) {
+                window.imaginalOS.onTerminalOpen();
+            }
         }
     }
 
@@ -752,6 +782,9 @@ Administrator: BMO
     window.imaginalOS.escapeHtml = escapeHtml;
     window.imaginalOS.getPromptString = getPromptString;
     window.imaginalOS.wrapEmoji = wrapEmoji;
+    window.imaginalOS.openTerminal = openTerminal;
+    window.imaginalOS.closeTerminal = closeTerminal;
+    window.imaginalOS.toggleTerminal = toggleTerminal;
     window.toggleTerminal = toggleTerminal;
     window.openTerminal = openTerminal;
     window.closeTerminal = closeTerminal;
