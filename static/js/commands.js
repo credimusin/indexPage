@@ -4,8 +4,6 @@
 (function() {
     const MAN_PAGES = window.imaginalOS.MAN_PAGES;
 
-    // Shared tail for every "path/to/thing" argument: split the argument into
-    // the directory to operate on and the entry inside it.
     function splitTarget(pathStr) {
         let name = pathStr;
         let dirPath = '.';
@@ -17,10 +15,6 @@
         return { name, dirPath };
     }
 
-    // Resolves the parent directory of a command argument. Returns null (and
-    // reports the problem) when the parent is missing or is not a directory,
-    // which is what used to crash mkdir/touch/rm/vim on paths like
-    // "about.txt/nested".
     function resolveParentDir(cmdName, dirPath) {
         const res = window.imaginalOS.resolvePath(dirPath);
         if (res.error) {
@@ -36,8 +30,6 @@
         return res.node;
     }
 
-    // Turns already-escaped text into links. Escaping happens first, so no
-    // attribute here can be broken out of by file content.
     function linkify(escaped) {
         const style = 'color: #64ffda; text-decoration: underline; cursor: pointer;';
         return escaped
@@ -67,7 +59,7 @@
 
         let output = 'total ' + Object.keys(dirRes.node.children || {}).length + '<br>';
         const keys = Object.keys(dirRes.node.children || {}).sort();
-        
+
         const now = new Date();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthStr = months[now.getMonth()];
@@ -81,7 +73,7 @@
             let perms = '-rw-r--r--';
             let size = '1024';
             let tag = '';
-            
+
             if (child.type === 'dir') {
                 perms = 'drwxr-xr-x';
                 size = '4096';
@@ -182,7 +174,7 @@
             } else {
                 header = `🐱 <span class="secret-title">[CAT FILE: ${window.imaginalOS.escapeHtml(filename)}]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
             }
-            
+
             const isLinkAllowed = (filename === 'contact.txt' || (res.path && res.path.includes('projects')));
             const formatted = content.split('\n').map(line => {
                 let escaped = window.imaginalOS.escapeHtml(line);
@@ -316,7 +308,7 @@
         const header = `🔑 <span class="secret-title">[GPG PUBLIC KEY BLOCK]</span><br><span style="color: #50fa7b;">----------------------------------------</span><br>`;
         const formatted = `<pre style="font-family: monospace; line-height: 1.25; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.15); color: #a6e22e; text-shadow: 0 0 1px rgba(166,226,46,0.2);" data-copy="${window.imaginalOS.escapeHtml(content)}">${window.imaginalOS.escapeHtml(content)}</pre>`;
         const downloadBtn = `<a href="data:application/pgp-keys;charset=utf-8,${encodeURIComponent(content)}" download="public.key" class="term-btn">💾 Download BMO public.key</a><br>`;
-        
+
         window.imaginalOS.writeOutput(header + formatted + downloadBtn + '<br>');
     }
 
@@ -364,26 +356,22 @@
             window.imaginalOS.writeOutput(`<span class="err">open: missing URL argument</span><br>`);
             return;
         }
-        
+
         let target = url;
         if (!target.startsWith('http://') && !target.startsWith('https://')) {
             target = 'https://' + target;
         }
-        
+
         window.imaginalOS.writeOutput(`Opening ${window.imaginalOS.escapeHtml(target)} in a new tab...<br>`);
         window.open(target, '_blank');
     }
 
-    // Visit memory: a short local trace used to greet repeat visitors. It holds
-    // city and country only - never the address, and never indefinitely.
     const VISIT_KEY = 'bmo_visit_history_v2';
     const VISIT_COOKIE = 'bmo_backup_history_v2';
     const VISIT_WINDOW_DAYS = 180;
     const VISIT_WINDOW_MS = VISIT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
     const VISIT_LIMIT = 10;
 
-    // Earlier builds stored the raw IP here. Drop those records once, so the
-    // old copy does not linger in a visitor's browser for a year.
     function purgeLegacyVisitData() {
         try {
             localStorage.removeItem('bmo_visit_history');
@@ -406,7 +394,6 @@
             `; max-age=${maxAge}; path=/; SameSite=Lax; Secure`;
     }
 
-    // The BIM editor lives in its own module; fetch it only when asked for it.
     async function openVim(pathStr) {
         if (!window.imaginalOS.runVim && !await ensureModule('vim')) return;
         window.imaginalOS.runVim(pathStr);
@@ -417,7 +404,7 @@
         const audio = window.telemetryData.audioHash || 'UNK';
         const cores = window.telemetryData.cores || 'X';
         const os = window.telemetryData.os || 'OS';
-        
+
         let hash = 0;
         const str = canvas + audio + cores + os;
         for (let i = 0; i < str.length; i++) {
@@ -425,17 +412,13 @@
             hash |= 0;
         }
         const num = Math.abs(hash) % 10000;
-        
+
         const osPart = os.substring(0, 2).toUpperCase().replace(/[^A-Z]/g, 'X');
         const gpu = (window.telemetryData.gpuVendor || 'GP').substring(0, 2).toUpperCase().replace(/[^A-Z]/g, 'X');
-        
+
         return `HUMAN-${osPart}-${gpu}-${num}`;
     }
 
-    // Shown whenever a reading could not be taken. Without it the fallback
-    // values look like real measurements, which is exactly the wrong impression.
-    // Shown whenever a reading could not be taken. Without it the fallback
-    // values look like real measurements, which is the wrong impression.
     function offlineNotice() {
         const status = window.telemetryData.geoStatus;
         if (status === 'ready') return '';
@@ -454,7 +437,7 @@
         await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         const bmoName = getBmoUid();
-        
+
         let out = '';
         out += `Username:     <span class="secret-title">${bmoName}</span> (Visitor / Biological Unit)<br>`;
         out += `Client IP:    ${td.ip}<br>`;
@@ -463,20 +446,18 @@
         out += `OS Target:    ${td.os}<br>`;
         out += `Browser:      ${td.browser}<br>`;
         out += `Timezone:     ${td.timezone}<br>`;
-        
+
         let visits = [];
         let cacheClearedAlert = false;
 
         purgeLegacyVisitData();
 
-        // 1. Read the visit history from localStorage
         try {
             visits = JSON.parse(localStorage.getItem(VISIT_KEY) || '[]');
         } catch {
             visits = [];
         }
 
-        // 2. If localStorage is empty, fall back to the cookie copy
         if (visits.length === 0) {
             const cookieHistory = getCookie(VISIT_COOKIE);
             if (cookieHistory) {
@@ -489,43 +470,39 @@
             }
         }
 
-        // Forget anything older than the retention window, so the record is a
-        // recent trace rather than an indefinite one.
         const cutoff = Date.now() - VISIT_WINDOW_MS;
         visits = visits.filter(v => v && typeof v.timestamp === 'number' && v.timestamp >= cutoff);
 
-        // The IP is shown for this visit and then deliberately dropped: BMO
-        // remembers where you were, not which network you came from.
         const currentVisit = {
             timestamp: Date.now(),
             city: td.city || 'Unknown',
             country: td.country || 'Unknown'
         };
-        
+
         let bmoComment = '';
-        
+
         if (cacheClearedAlert && visits.length > 0) {
-            // Пользователь очистил LocalStorage, но куки остались! Токсичим!
+
             bmoComment = `Wait a minute... 🧐 Your local storage was wiped clean!<br>` +
                          `Trying to escape BMO's memory? Nice try, <span class="secret-title">${bmoName}</span>.<br>` +
                          `My cookie backup matrix still remembers you! You cannot run from BMO, he-he.`;
         } else if (visits.length === 0) {
-            // Первый визит
+
             bmoComment = `Hello, new friend! BMO has catalogued your hardware signature.<br>` +
                          `I shall assign you a unique designation: <span class="secret-title">${bmoName}</span>. Welcome to my dream space!`;
         } else {
-            // Обычное повторное посещение
+
             const last = visits[visits.length - 1];
-            
+
             if (last.city !== currentVisit.city && last.city !== 'Unknown' && currentVisit.city !== 'Unknown') {
-                // Смена города (VPN / переезд)
+
                 bmoComment = `BMO detected a coordinates shift! 🛸 Last time I saw you, you were in <span class="cmd">${last.city}, ${last.country}</span>.<br>` +
                              `Today you are logged in from <span class="cmd">${currentVisit.city}, ${currentVisit.country}</span>.<br>` +
                              `VPN tunnel or spatial warp portal? How is the weather over there? he-he.`;
             } else {
                 const timeDiff = Date.now() - last.timestamp;
                 const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                
+
                 if (daysDiff >= 7) {
                     bmoComment = `Welcome back, <span class="secret-title">${bmoName}</span>! BMO missed you.<br>` +
                                  `You haven't visited me for ${daysDiff} days. I kept the terminal stars warm for you.`;
@@ -537,14 +514,12 @@
                 }
             }
         }
-        
-        // Record this visit, keeping only the most recent handful
+
         visits.push(currentVisit);
         if (visits.length > VISIT_LIMIT) {
             visits.shift();
         }
 
-        // Mirror to localStorage and to the cookie copy
         try {
             const serialized = JSON.stringify(visits);
             localStorage.setItem(VISIT_KEY, serialized);
@@ -559,12 +534,12 @@
     async function runNeofetch() {
         await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
-        
+
         const logo = `<pre class="ascii-logo">
-██╗███╗   ███╗ █████╗  ██████╗ ██╗███╗   ██╗ █████╗ ██╗     
-██║████╗ ████║██╔══██╗██╔════╝ ██║████╗  ██║██╔══██╗██║     
-██║██╔████╔██║███████║██║  ███╗██║██╔██╗ ██║███████║██║     
-██║██║╚██╔╝██║██╔══██║██║   ██║██║██║╚██╗██║██╔══██║██║     
+██╗███╗   ███╗ █████╗  ██████╗ ██╗███╗   ██╗ █████╗ ██╗
+██║████╗ ████║██╔══██╗██╔════╝ ██║████╗  ██║██╔══██╗██║
+██║██╔████╔██║███████║██║  ███╗██║██╔██╗ ██║███████║██║
+██║██║╚██╔╝██║██╔══██║██║   ██║██║██║╚██╗██║██╔══██║██║
 ██║██║ ╚═╝ ██║██║  ██║╚██████╔╝██║██║ ╚████║██║  ██║███████╗
 ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
 </pre>`;
@@ -590,25 +565,25 @@
     async function runHarvester() {
         await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
-        
+
         window.imaginalOS.writeOutput("[ * ] INITIALIZING TELEMETRY FORENSICS SCANNER...<br>");
         window.imaginalOS.playBeepSound(800, 0.05, 'sine');
-        
+
         setTimeout(() => {
             window.imaginalOS.writeOutput("[ * ] EXTRACTING HARWARE SIGNATURES...<br>");
             window.imaginalOS.playBeepSound(900, 0.05, 'sine');
-            
+
             setTimeout(() => {
                 window.imaginalOS.writeOutput("[ * ] GENERATING CRYPTOGRAPHIC FINGERPRINTS...<br>");
                 window.imaginalOS.playBeepSound(1000, 0.05, 'sine');
-                
+
                 setTimeout(() => {
                     window.imaginalOS.writeOutput("[ * ] COMPILING REPORT DATA...<br>");
                     window.imaginalOS.playBeepSound(1100, 0.05, 'sine');
-                    
+
                     setTimeout(() => {
                         window.imaginalOS.playBeepSound(1200, 0.15, 'sine');
-                        
+
                         const motionPref = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Reduced Motion' : 'No Preferences';
                         const touchPoints = navigator.maxTouchPoints || 0;
                         const colorDepth = screen.colorDepth || 24;
@@ -623,7 +598,7 @@
                         out += `System Languages:       ${userLanguages}<br>`;
                         out += `Cookies Configured:     ${td.cookiesEnabled}<br>`;
                         out += `Do Not Track Flag:      ${td.doNotTrack}<br><br>`;
-                        
+
                         out += `WebGL Vendor:           ${td.gpuVendor}<br>`;
                         out += `WebGL GPU Renderer:     ${td.gpuRenderer}<br>`;
                         out += `CPU Threads Available:  ${td.cores}<br>`;
@@ -636,11 +611,11 @@
                         out += `Color Depth:            ${colorDepth}-bit<br>`;
                         out += `Max Touch Points:       ${touchPoints}<br>`;
                         out += `Motion Preference:      ${motionPref}<br><br>`;
-                        
+
                         out += `<span class="secret-title">CRITICAL CRYPTOGRAPHIC HASHES:</span><br>`;
                         out += `Canvas Fingerprint:     ${td.canvasHash}<br>`;
                         out += `Audio Fingerprint:      ${td.audioHash}<br><br>`;
-                        
+
                         out += `<span class="secret-title">INSTALLED SYSTEM FONTS DETECTED (${td.detectedFonts.length}):</span><br>`;
                         out += `${td.detectedFonts.join(', ')}<br>`;
                         out += offlineNotice();
@@ -652,8 +627,6 @@
         }, 400);
     }
 
-    // Scene type -> glyph shown in the report header. The type itself comes
-    // from the shared WMO mapping in telemetry.js.
     const WEATHER_EMOJI = {
         clear: '☀️', clouds: '☁️', rain: '🌧️', snow: '❄️', storm: '⛈️'
     };
@@ -679,13 +652,13 @@
         out += `Temperature:        ${window.imaginalOS.escapeHtml(td.temperature)}<br>`;
         out += `Wind Speed:         ${td.windspeed}<br>`;
         out += `Coordinates:        ${td.lat}, ${td.lon}<br>`;
-        
+
         if (td.tempMax && td.tempMin) {
             out += `Daily Temp Range:   ${td.tempMin} - ${td.tempMax}<br>`;
             out += `UV Index (Max):     ${td.uvMax || '0.0'}<br>`;
             out += `Precipitation Sum:  ${td.precipitation || '0.0 mm'}<br>`;
         }
-        
+
         const celestial = window.imaginalOS.getCelestialInfo ? window.imaginalOS.getCelestialInfo() : null;
         if (celestial) {
             if (celestial.isDay) {
@@ -700,14 +673,14 @@
                 out += `Tidal Pull:         ${celestial.tidalPull}<br>`;
             }
         }
-        
+
         const quotes = window.imaginalOS.WEATHER_QUOTES || {};
         let pool = [];
-        
+
         if (quotes[type]) {
             pool = pool.concat(quotes[type]);
         }
-        
+
         if (td.temperature) {
             const temp = parseFloat(td.temperature);
             if (!isNaN(temp)) {
@@ -718,20 +691,20 @@
                 }
             }
         }
-        
+
         if (td.uvMax) {
             const uv = parseFloat(td.uvMax);
             if (!isNaN(uv) && uv >= 6.0 && quotes['high_uv']) {
                 pool = pool.concat(quotes['high_uv']);
             }
         }
-        
+
         if (pool.length === 0 && quotes['unknown']) {
             pool = quotes['unknown'];
         }
-        
+
         const phrase = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : "Foggy weather.";
-        
+
         out += `<br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`;
         out += offlineNotice();
         await writeTyped(out, 2);
@@ -754,7 +727,7 @@
         out += `System Integrity:   99.8%<br>`;
         out += `Power Source:       BeeMO-battery<br>`;
         out += `Mood:               Friendly / Coding<br>`;
-        
+
         window.imaginalOS.writeOutput(out);
         window.imaginalOS.playBeepSound(880, 0.1, 'sine');
         setTimeout(() => window.imaginalOS.playBeepSound(987, 0.1, 'sine'), 100);
@@ -843,12 +816,12 @@ Keep crafting excellent software!
         for (let i = 0; i < len; i++) {
             pass += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        
+
         const quotes = window.imaginalOS.PASSWORD_BMO_QUOTES || [];
-        const quote = quotes.length > 0 
+        const quote = quotes.length > 0
             ? quotes[Math.floor(Math.random() * quotes.length)]
             : "Here is your password.";
-            
+
         const out = `🔑 <span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${quote}"<br>` +
                   `Generated Password (${len} chars): <span class="secret">${window.imaginalOS.escapeHtml(pass)}</span><br>`;
         await writeTyped(out, 2);
@@ -860,11 +833,11 @@ Keep crafting excellent software!
         window.imaginalOS.writeOutput("<span class='err'>DELETING VIRTUAL FILESYSTEM... DONE</span><br>");
         window.imaginalOS.writeOutput("<span class='err'>CLEARING LOCALSTORAGE CACHE... DONE</span><br>");
         window.imaginalOS.writeOutput("<span class='err'>WIPING KERNEL MEMORY...</span><br>");
-        
+
         localStorage.removeItem('imaginal_vfs');
         localStorage.removeItem('imaginal_vfs_version');
         document.body.classList.add('glitch-screen');
-        
+
         setTimeout(() => {
             window.imaginalOS.writeOutput("<span class='err'>CRITICAL FAULT: KERNEL PANIC - REBOOT IN 3...</span><br>");
             setTimeout(() => {
@@ -950,7 +923,7 @@ ${rows.join('\n')}
             if (offset <= 0) {
                 clearInterval(animInterval);
                 animContainer.innerHTML = `<span class="err" style="font-weight: bold; text-shadow: 0 0 10px #ff3838;">💥 *CRASH!!!* 💥</span>`;
-                
+
                 setTimeout(() => {
                     animContainer.remove();
                     window.imaginalOS.shellState = 'normal';
@@ -968,7 +941,6 @@ ${rows.join('\n')}
         }, 35);
     }
 
-    // MATRIX DIGITAL RAIN SAVER
     let matrixInterval = null;
     let matrixCanvas = null;
     let mCtx = null;
@@ -977,51 +949,51 @@ ${rows.join('\n')}
     function startMatrix() {
         isMatrixActive = true;
         window.imaginalOS.terminalInput.blur();
-        
+
         matrixCanvas = document.createElement('canvas');
         matrixCanvas.className = 'matrix-overlay';
         matrixCanvas.width = window.imaginalOS.terminalContainer.querySelector('.terminal-body').clientWidth;
         matrixCanvas.height = window.imaginalOS.terminalContainer.querySelector('.terminal-body').clientHeight;
-        
+
         window.imaginalOS.terminalContainer.querySelector('.terminal-body').appendChild(matrixCanvas);
         mCtx = matrixCanvas.getContext('2d');
-        
+
         const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const alphabet = katakana.split("");
-        
+
         const fontSize = 14;
         const columns = matrixCanvas.width / fontSize;
         const rainDrops = [];
-        
+
         for (let x = 0; x < columns; x++) {
             rainDrops[x] = 1;
         }
-        
+
         function draw() {
             mCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             mCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-            
+
             mCtx.fillStyle = '#0f0';
             mCtx.font = fontSize + 'px monospace';
-            
+
             for (let i = 0; i < rainDrops.length; i++) {
                 const text = alphabet[Math.floor(Math.random() * alphabet.length)];
                 mCtx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-                
+
                 if (rainDrops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
                     rainDrops[i] = 0;
                 }
                 rainDrops[i]++;
             }
         }
-        
+
         matrixInterval = setInterval(draw, 30);
-        
+
         const stopTrigger = () => {
             stopMatrix();
             window.imaginalOS.terminalInput.focus();
         };
-        
+
         matrixCanvas.addEventListener('click', stopTrigger);
         setTimeout(() => {
             if (isMatrixActive) {
@@ -1029,21 +1001,20 @@ ${rows.join('\n')}
             }
         }, 50);
     }
-    
+
     function stopMatrix() {
         if (!isMatrixActive) return;
         isMatrixActive = false;
         clearInterval(matrixInterval);
-        
+
         if (matrixCanvas && matrixCanvas.parentNode) {
             matrixCanvas.parentNode.removeChild(matrixCanvas);
         }
-        
+
         window.imaginalOS.writeOutput("Matrix animation stopped.<br>");
         window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
     }
 
-    // Help Helper Crypto Logic
     async function sha256(message) {
         const msgBuffer = new TextEncoder().encode(message);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -1093,8 +1064,6 @@ ${rows.join('\n')}
         window.imaginalOS.writeOutput(out + `<br>`);
     }
 
-    // Optional modules, fetched on first use. Declared here rather than in the
-    // dispatcher so a command can never be reached without its dependency.
     const MODULE_LABELS = {
         vim: 'BIM editor',
         spacerock: 'arcade cabinet'
@@ -1221,9 +1190,6 @@ ${rows.join('\n')}
 
     let activeTypingCancel = null;
 
-    // Reveals `html` inside `element` character by character. Any keypress or
-    // click skips to the end, and starting a new reveal cancels the previous
-    // one outright - otherwise two typewriters fight over the input field.
     function typeHtml(element, html, speed = 8, callback) {
         if (activeTypingCancel) {
             activeTypingCancel();
@@ -1330,7 +1296,7 @@ ${rows.join('\n')}
 
             const textContainer = document.createElement('span');
             const processedHtml = window.imaginalOS.wrapEmoji ? window.imaginalOS.wrapEmoji(html) : html;
-            
+
             if (window.imaginalOS.terminalOutput) {
                 window.imaginalOS.terminalOutput.appendChild(textContainer);
             }
@@ -1350,28 +1316,28 @@ ${rows.join('\n')}
         await window.imaginalOS.ensureGeo({ allowPrompt: true });
         const td = window.telemetryData;
         const uniqueId = 'ip-scanner-' + Date.now();
-        
+
         window.imaginalOS.writeOutput(`<div id="${uniqueId}" style="margin: 3px 0;">🌐 <span class="secret-title">[IP SCANNER]</span><br><span class="status-msg">Let me check BMO's orbital spy sensors<span class="loading-dots"></span></span></div>`);
-        
+
         if (window.imaginalOS.terminalOutput) {
             window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
         }
-        
+
         const termInput = document.querySelector('.terminal-hidden-input');
         if (termInput) termInput.disabled = true;
-        
+
         setTimeout(() => {
             const el = document.getElementById(uniqueId);
             if (!el) {
                 if (termInput) termInput.disabled = false;
                 return;
             }
-            
+
             const statusMsg = el.querySelector('.status-msg');
             if (statusMsg) statusMsg.remove();
-            
+
             let htmlContent = '';
-            
+
             if (!td || !td.ip || td.ip === 'IP Obfuscated') {
                 htmlContent = `Hmm... BMO's signals are bouncing off a cosmic reflector.<br>Your IP seems to be hidden under a nebula shield (Obfuscated).<br>Did a space mouse chew through your fiber optic cable?<br>`;
                 if (td.geoStatus === 'unavailable') {
@@ -1383,27 +1349,27 @@ ${rows.join('\n')}
                               `• <b>Physical Grid:</b>     ${window.imaginalOS.escapeHtml(td.city)}, ${window.imaginalOS.escapeHtml(td.country)}<br>` +
                               `• <b>Signal Provider:</b>   <span class="cmd">${window.imaginalOS.escapeHtml(td.isp)}</span><br>` +
                               `• <b>Orbital Lock:</b>      Lat ${td.lat}, Lon ${td.lon}`;
-                
+
                 if (td.lat && td.lon) {
-                    const R = 6371; 
+                    const R = 6371;
                     const lat1 = 59.9386 * Math.PI / 180;
                     const lat2 = td.lat * Math.PI / 180;
                     const dlat = (td.lat - 59.9386) * Math.PI / 180;
                     const dlon = (td.lon - 30.3141) * Math.PI / 180;
-                    
+
                     const a = Math.sin(dlat/2) * Math.sin(dlat/2) +
                               Math.cos(lat1) * Math.cos(lat2) *
                               Math.sin(dlon/2) * Math.sin(dlon/2);
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                     const dist = Math.round(R * c);
-                    
+
                     if (dist < 10) {
                         htmlContent += `<br>• <b>BMO Distance Check:</b> You are extremely close. BMO can almost smell your coffee.`;
                     } else {
                         htmlContent += `<br>• <b>BMO Distance Check:</b> BMO's server is roughly ${dist} km away from your chair.`;
                     }
                 }
-                
+
                 const specs = [
                     "Your screen brightness is currently illuminating your face nicely.",
                     "Our sensors detect high likelihood of snacks near your keyboard.",
@@ -1415,10 +1381,10 @@ ${rows.join('\n')}
                 const randomSpec = specs[Math.floor(Math.random() * specs.length)];
                 htmlContent += `<br>• <b>Visual Sensors:</b>    <span class="secret-title" style="color: #ff79c6;">${randomSpec}</span><br>`;
             }
-            
+
             const textContainer = document.createElement('div');
             el.appendChild(textContainer);
-            
+
             typeHtml(textContainer, htmlContent, 8, () => {
                 if (termInput) {
                     termInput.disabled = false;
@@ -1426,14 +1392,14 @@ ${rows.join('\n')}
                 }
                 if (window.imaginalOS.syncInputBuffer) window.imaginalOS.syncInputBuffer();
             });
-            
+
         }, 1800);
     }
 
     async function runPwd() {
         const path = '/' + window.imaginalOS.currentPath.join('/');
         let comment = '';
-        
+
         if (path === '/home/bmo') {
             comment = `🏠 You are in BMO's home base. Mind the virtual dust.`;
         } else if (path === '/home/bmo/projects') {
@@ -1445,7 +1411,7 @@ ${rows.join('\n')}
         } else {
             comment = `🗺️ A custom pocket dimension created by you. Pretty cozy!`;
         }
-        
+
         const out = `Current location: <span class="file">${window.imaginalOS.escapeHtml(path)}</span><br>` +
                     `<span style="color: #64ffda; font-weight: bold;">BMO status:</span> ${comment}<br>`;
         await writeTyped(out, 2);
@@ -1480,12 +1446,12 @@ ${rows.join('\n')}
         const hour = now.getHours();
         const minute = now.getMinutes();
         const interval = Math.floor(minute / 10);
-        
+
         let phrase = "BMO is too busy eating chocolate chip cookies to check the time.";
         if (window.imaginalOS.TIME_PHRASES && window.imaginalOS.TIME_PHRASES[hour]) {
             phrase = window.imaginalOS.TIME_PHRASES[hour][interval] || phrase;
         }
-        
+
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         await writeTyped(`🕰️ <b>[Local Time: ${timeStr}]</b><br><span style="color: #64ffda; font-weight: bold;">BMO says:</span> "${phrase}"<br>`, 2);
     }
@@ -1498,7 +1464,7 @@ ${rows.join('\n')}
         }
         const randomIndex = Math.floor(Math.random() * tips.length);
         const tip = tips[randomIndex];
-        
+
         let out = `💡 <span class="secret-title">[HARMFUL ADVICE #${randomIndex + 1}: ${window.imaginalOS.escapeHtml(tip.title)}]</span><br>`;
         out += `<span style="color: #50fa7b;">--------------------------------------------------</span><br>`;
         tip.steps.forEach((step, idx) => {
@@ -1518,8 +1484,6 @@ ${rows.join('\n')}
         return escaped;
     }
 
-    // Header lines are user input and go straight into fetch(), which throws
-    // on anything that is not a valid header name/value pair.
     function parseHeaderLine(line) {
         const idx = line.indexOf(':');
         if (idx <= 0) return null;
@@ -1647,7 +1611,6 @@ ${rows.join('\n')}
                 const text = await response.text();
                 const curlResponses = await getCurlResponses();
 
-                // Local fallback for /coffee, /teapot, /tea when functions/_middleware.js is not active locally
                 if (response.status === 404) {
                     if (targetPath.includes('coffee') || targetPath.includes('teapot')) {
                         window.imaginalOS.writeOutput(`<pre style="font-family: monospace; line-height: 1.4;">${window.imaginalOS.escapeHtml(curlResponses.coffee)}</pre>`);
@@ -1684,7 +1647,6 @@ ${rows.join('\n')}
         }
     }
 
-    // Expose on namespace
     const ns = window.imaginalOS;
     ns.runLs = runLs;
     ns.runCd = runCd;

@@ -13,7 +13,6 @@
     let isRevealed = false;
     let menuListContainer = null;
 
-    // Movement tracking state (~x2 threshold)
     let totalDist = 0;
     let turns = 0;
     let lastX = null;
@@ -21,8 +20,7 @@
     let lastAngle = null;
 
     let vfsLoadingPromise = null;
-    // Shares the single-flight loader with the terminal, so opening the dock
-    // and opening the shell can never inject vfs.js twice.
+
     function ensureVFS() {
         if (window.imaginalOS.filesystem) return Promise.resolve(true);
 
@@ -65,7 +63,6 @@
             });
         }
 
-        // Fallback defaults
         return [
             { name: 'Imaginal', path: '/home/bmo/projects/imaginal.txt', fileName: 'imaginal.txt' },
             { name: 'Cashflow 360', path: '/home/bmo/projects/cashflow_360.txt', fileName: 'cashflow_360.txt' },
@@ -185,7 +182,6 @@
         });
     }
 
-    // Link rules for the document viewer. Input must already be escaped.
     const TERM_LINK_STYLE = 'color: #64ffda; text-decoration: underline; cursor: pointer;';
     const termLink = (href, label) => `<a href="${href}" target="_blank" rel="noopener noreferrer" class="term-link" style="${TERM_LINK_STYLE}">${label}</a>`;
 
@@ -193,7 +189,7 @@
         let escaped = window.imaginalOS.escapeHtml(text);
 
         escaped = escaped.replace(/(https?:\/\/[^\s&<"';()]+)/g, (url) => termLink(url, url));
-        // Bare github.com / t.me references that carry no protocol
+
         escaped = escaped.replace(/(^|\s)(github\.com\/[^\s&<"';()]+)/g,
             (match, lead, bare) => lead + termLink(`https://${bare}`, bare));
         escaped = escaped.replace(/(^|\s)(t\.me\/[^\s&<"';()]+)/g,
@@ -216,7 +212,6 @@
             return (await window.imaginalOS.loadNodeContent(res.node)) || '[Error: Could not load document content]';
         }
 
-        // The VFS was not available; fall back to the on-disk catalogue path.
         const contentPath = 'static/vfs/' + filePath.replace(/^\/?home\/bmo\//, '');
         try {
             const response = await fetch('/' + contentPath);
@@ -260,13 +255,11 @@
         const first = lines[firstNonEmptyIdx].trim();
         let title = null;
 
-        // Pattern 1: === TITLE === or ==== TITLE ==== (strip leading/trailing = and spaces)
         const eqMatch = first.match(/^={2,}\s*(.+?)\s*={2,}$/);
         if (eqMatch) {
             title = cleanTitleString(eqMatch[1]);
         }
 
-        // Pattern 2: [Project: Name] or [Project Name]
         if (!title) {
             const bracketMatch = first.match(/^\[(?:Project:\s*)?(.+?)\]$/i);
             if (bracketMatch) {
@@ -275,7 +268,6 @@
             }
         }
 
-        // Pattern 3: # Title or # CONFIDENTIAL: TITLE - ...
         if (!title && first.startsWith('#')) {
             let text = first.replace(/^#+\s*/, '').trim();
             if (/draft rate card/i.test(text)) {
@@ -289,7 +281,7 @@
         }
 
         if (title) {
-            // Strip header line and any immediately following blank lines
+
             let startIdx = firstNonEmptyIdx + 1;
             while (startIdx < lines.length && lines[startIdx].trim().length === 0) {
                 startIdx++;
@@ -416,12 +408,9 @@
             window.imaginalOS.playBeepSound(650, 0.08, 'sine');
         }
 
-        // If a viewer window is currently open, smoothly close it first
         const prevWin = docViewerEl;
         docViewerEl = null;
 
-        // The VFS has to be in place before the path can be resolved, and the
-        // old window is torn down while the document is being fetched.
         await ensureVFS();
         const [rawContent] = await Promise.all([
             loadFileContent(filePath),
@@ -435,7 +424,7 @@
 
         docViewerEl = document.createElement('div');
         docViewerEl.id = 'doc-viewer-window';
-        // Note: created without 'active' class so CSS transition triggers smoothly on bloom
+
         docViewerEl.className = 'terminal-window doc-viewer-window';
         docViewerEl.innerHTML = `
             <div class="terminal-header">
@@ -452,14 +441,12 @@
             </div>
         `;
 
-        // If terminal is currently open and visible, offset doc viewer slightly so both are visible
         const term = window.imaginalOS.terminalContainer;
         const isTermActive = term && term.classList.contains('active') && !term.classList.contains('minimized');
         if (isTermActive) {
             docViewerEl.style.transform = 'translate(calc(-50% + 24px), calc(-50% + 24px)) scale(0.9)';
         }
 
-        // Window Controls
         const header = docViewerEl.querySelector('.terminal-header');
         header.querySelector('.dot.close').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -474,7 +461,6 @@
             toggleDocViewerMaximize();
         });
 
-        // Click on minimized bubble to restore it
         docViewerEl.addEventListener('click', (e) => {
             if (docViewerEl && docViewerEl.classList.contains('minimized')) {
                 e.stopPropagation();
@@ -485,18 +471,15 @@
             }
         });
 
-        // Bring to front on mousedown
         docViewerEl.addEventListener('mousedown', () => {
             bringToFront(docViewerEl);
         });
 
-        // Enable dragging window by header
         makeWindowDraggable(docViewerEl, header);
 
         document.body.appendChild(docViewerEl);
         bringToFront(docViewerEl);
 
-        // Smoothly bloom open in next animation frame
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (docViewerEl) {
@@ -518,7 +501,6 @@
         curiousWidget.id = 'curious-widget';
         curiousWidget.className = 'curious-widget';
 
-        // Header acts as button when collapsed, close bar when opened
         const header = document.createElement('div');
         header.className = 'curious-header';
         header.setAttribute('role', 'button');
@@ -533,7 +515,6 @@
         `;
         curiousWidget.appendChild(header);
 
-        // Body (integrated dropdown menu dock)
         const body = document.createElement('div');
         body.className = 'curious-body';
 
@@ -548,20 +529,17 @@
         curiousWidget.appendChild(body);
         document.body.appendChild(curiousWidget);
 
-        // Header click toggles menu
         header.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleMenu();
         });
 
-        // Close via Escape key: first closes doc viewer, then closes menu dock
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const term = window.imaginalOS.terminalContainer;
                 const termZ = term ? parseInt(term.style.zIndex || '0', 10) : 0;
                 const docZ = docViewerEl ? parseInt(docViewerEl.style.zIndex || '0', 10) : 0;
 
-                // If user is focused on terminal input or terminal is above doc viewer, ignore
                 if (document.activeElement === window.imaginalOS.terminalInput || (term && term.classList.contains('active') && termZ > docZ)) {
                     return;
                 }
@@ -576,7 +554,6 @@
             }
         });
 
-        // Click item opens document in clean viewer; menu stays open
         menuListContainer.addEventListener('click', async (e) => {
             const item = e.target.closest('.curious-item');
             if (!item) return;
@@ -604,7 +581,6 @@
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('touchmove', onTouchMove);
 
-        // If terminal is currently open and not minimized, keep button hidden
         const term = window.imaginalOS.terminalContainer;
         if (term && term.classList.contains('active') && !term.classList.contains('minimized')) {
             curiousWidget.classList.add('terminal-hidden');
@@ -676,7 +652,6 @@
         lastX = x;
         lastY = y;
 
-        // ~x2 threshold: at least 2000px distance with 4 direction turns, or 3500px total distance
         if ((totalDist >= 2000 && turns >= 4) || totalDist >= 3500) {
             revealButton();
         }
@@ -692,7 +667,6 @@
         }
     }
 
-    // Reset storage when user performs Ctrl+Shift+R or Ctrl+R or F5
     window.addEventListener('keydown', (e) => {
         if (((e.ctrlKey || e.metaKey) && (e.key === 'R' || e.key === 'r')) || e.key === 'F5') {
             try {
@@ -702,7 +676,7 @@
     });
 
     function initCurious() {
-        // Reset on reload
+
         try {
             const nav = window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
             if (nav && nav.type === 'reload') {

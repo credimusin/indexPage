@@ -64,9 +64,6 @@
     let terminalLoaded = false;
     let terminalLoadPromise = null;
 
-    // Every script the terminal can reach, and nothing else. Terminal modules
-    // are injected at runtime, so the browser cannot discover them from the
-    // markup; this manifest is the single place that knows they exist.
     const MODULES = {
         sound: '/static/js/sound.js',
         data: '/static/js/commands_data.js',
@@ -77,9 +74,6 @@
         spacerock: '/static/js/spacerock.js'
     };
 
-    // What a bare shell needs. `vim` and `spacerock` are deliberately absent:
-    // they are pulled in by the command that uses them, so opening the
-    // terminal never pays for an editor or a game nobody asked for.
     const TERMINAL_BOOT = ['sound', 'data', 'vfs', 'commands', 'terminal'];
 
     function loadModule(name) {
@@ -93,10 +87,6 @@
         return window.imaginalOS.loadScript(src);
     }
 
-    // core.js is the one file linked from the markup rather than injected, so
-    // it is the one a stale browser cache can leave behind. Without its loader
-    // nothing else can boot, which would otherwise surface as an unexplained
-    // dead terminal.
     function reportStaleCore() {
         const message = 'imaginalOS: core.js is an older cached copy without the module loader. Hard-reload (Ctrl+Shift+R) to fetch it.';
         console.error('%c' + message, 'color: #ff5555; font-weight: bold;');
@@ -106,8 +96,7 @@
     window.imaginalOS.MODULES = MODULES;
 
     async function loadTerminalScripts() {
-        // vfs.js stamps the persisted filesystem with the version, so the
-        // version banner has to be settled before any subsystem boots.
+
         await window.imaginalOS.VERSION_READY;
         for (const name of TERMINAL_BOOT) {
             await loadModule(name);
@@ -125,7 +114,7 @@
             })
             .catch((err) => {
                 console.error('Failed to load terminal subsystem:', err);
-                // Let a later keypress retry a partially loaded subsystem.
+
                 terminalLoadPromise = null;
                 return false;
             });
@@ -136,7 +125,7 @@
 
     window.addEventListener('keydown', async (e) => {
         if (terminalLoaded) return;
-        
+
         if (e.key === '`') {
             e.preventDefault();
             if (window.imaginalOS.onTerminalOpen) {
@@ -180,7 +169,7 @@
         function animate() {
             const w = window.innerWidth;
             const h = window.innerHeight;
-            
+
             particles.forEach(p => {
                 p.x += p.vx;
                 p.y += p.vy;
@@ -198,8 +187,6 @@
 
     const SUBSYSTEMS = ['initTelemetry', 'initWeatherCanvas', 'initCurious'];
 
-    // Geo and weather are only requested once the visitor has shown intent to
-    // interact. Merely loading the page transfers nothing to anybody.
     const INTENT_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
     function installIntentTrigger() {
@@ -218,7 +205,7 @@
         try {
             init();
         } catch (err) {
-            // One broken subsystem must never take the whole boot down.
+
             console.error(`imaginalOS: ${name} failed to start`, err);
         }
     }
@@ -233,8 +220,6 @@
         const queryMatch = window.location.search.match(ERROR_CODES);
         if (queryMatch) return queryMatch[1];
 
-        // Only extension-less routes are SPA routes; anything with a file
-        // extension is a real asset and must not be dressed up as a 404.
         const isRootDocument = path === '/' || path === '/index.html';
         const looksLikeAsset = /\.[^/]+$/.test(path);
         return (!isRootDocument && !looksLikeAsset) ? '404' : '';

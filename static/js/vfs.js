@@ -157,9 +157,6 @@
         return isDir(node) && !!node.children;
     }
 
-    // Files are stored on disk and hydrated into the in-memory tree on demand.
-    // A successful load is cached in localStorage with the rest of the
-    // filesystem; a failed one is not, so a retry can still succeed later.
     async function loadNodeContent(node) {
         if (!node || node.content !== undefined || !node.contentPath) return node ? node.content : undefined;
 
@@ -179,9 +176,6 @@
         return node.content;
     }
 
-    // Adds anything the stored filesystem is missing from the shipped
-    // defaults, so a file added to the catalogue in a later release shows up
-    // for returning visitors too. Returns true when the tree was changed.
     function mergeDefaults(node, defaults) {
         if (!defaults || !hasChildren(defaults)) return false;
 
@@ -257,7 +251,6 @@
         return { node, path: workingPath };
     }
 
-    // Expose on global namespace
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.defaultVFS = defaultVFS;
     window.imaginalOS.isDir = isDir;

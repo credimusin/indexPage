@@ -1,6 +1,3 @@
-// Global middleware. Runs in front of every request, including static assets,
-// so it must stay cheap: the version and the easter-egg payloads are only
-// fetched on the few routes that actually need them.
 const VFS_REWRITES = {
   "/about.txt": "/static/vfs/about.txt",
   "/contact.txt": "/static/vfs/contact.txt",
@@ -52,7 +49,6 @@ export async function onRequest(context) {
     });
   }
 
-  // Shell users get the ANSI homepage instead of the page.
   if (path === "/" && CURL_AGENT.test(request.headers.get("user-agent") || "")) {
     const [{ homepage = "" }, pkg] = await Promise.all([
       readAsset(context, "/static/js/curl_responses.json"),

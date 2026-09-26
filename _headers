@@ -7,3 +7,21 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/static/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/static/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/static/vfs/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/static/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/package.json
+  Cache-Control: public, max-age=0, must-revalidate

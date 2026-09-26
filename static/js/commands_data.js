@@ -2,10 +2,7 @@
  * ImaginalOS - CLI Static Data Catalog
  */
 (function() {
-    // Single source of truth for the command surface. `aliases` are the
-    // alternative spellings the dispatcher accepts; everything else in the
-    // system (help output, tab completion, history validation, man index) is
-    // derived from this list instead of repeating it.
+
     const COMMANDS = [
         { name: 'bmo', desc: 'Launch BMO status and diagnostic panel.' },
         { name: 'cat', args: '&lt;file&gt;', desc: 'Print contents of a text file.' },
@@ -332,7 +329,7 @@
         }
     };
 
-    const COOKIE_POLICY_TEXT = 
+    const COOKIE_POLICY_TEXT =
         `🍪 <span class="secret-title">[COOKIE DIRECTIVE]</span><br>` +
         `<span style="color: #50fa7b;">--------------------------------------------------</span><br>` +
         `Just like 99.9% of the websites in this sector of the galaxy, we collect cookies.<br><br>` +
@@ -830,7 +827,6 @@ Options:<br>
   -H, --header LINE   Extra header to include in the request<br>
   -h, --help          This help text<br>`;
 
-    // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.COMMANDS = COMMANDS;
     window.imaginalOS.ALL_COMMAND_NAMES = ALL_COMMAND_NAMES;

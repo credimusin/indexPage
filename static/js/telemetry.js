@@ -5,8 +5,6 @@
     const FALLBACK_LAT = 59.9386;
     const FALLBACK_LON = 30.3141;
 
-    // WMO weather interpretation codes -> the small set of scene types the
-    // canvas knows how to draw. `weather` prints these labels too.
     const WEATHER_CODE_MAP = [
         { max: 0, type: 'clear', text: 'Clear sky' },
         { max: 3, type: 'clouds', text: 'Partly cloudy' },
@@ -19,8 +17,6 @@
         { max: 99, type: 'storm', text: 'Thunderstorm' }
     ];
 
-    // Pure lookup: WMO code -> { type, text }. No side effects, so other
-    // modules (the `weather` report) can reuse the mapping.
     function describeWeatherCode(code) {
         return WEATHER_CODE_MAP.find(entry => code <= entry.max) || WEATHER_CODE_MAP[0];
     }
@@ -33,7 +29,6 @@
         window.telemetryData.weatherText = match.text;
     }
 
-    // Global telemetry registry
     window.telemetryData = {
         ip: 'Scanning...',
         city: 'Saint Petersburg (Fallback)',
@@ -71,12 +66,9 @@
         gpuVendor: 'Unknown',
         gpuRenderer: 'Unknown',
         referrer: document.referrer || 'Direct Visit',
-        // 'idle' before anything is requested, then:
-        //   'ready'   real measurement (from the edge or the browser)
-        //   'offline' nothing available and no prompt was allowed
-        //   'denied'  the visitor refused the browser location prompt
+
         geoStatus: 'idle',
-        // 'edge' | 'browser' | null - which one produced lat/lon
+
         locationSource: null
     };
 
@@ -84,7 +76,7 @@
         const ua = navigator.userAgent;
         let browser = "Unknown Browser";
         let os = "Unknown OS";
-        
+
         if (ua.indexOf("Firefox") > -1) browser = "Mozilla Firefox";
         else if (ua.indexOf("SamsungBrowser") > -1) browser = "Samsung Internet";
         else if (ua.indexOf("Opera") > -1 || ua.indexOf("OPR") > -1) browser = "Opera";
@@ -92,7 +84,7 @@
         else if (ua.indexOf("Edge") > -1 || ua.indexOf("Edg") > -1) browser = "Microsoft Edge";
         else if (ua.indexOf("Chrome") > -1) browser = "Google Chrome";
         else if (ua.indexOf("Safari") > -1) browser = "Apple Safari";
-        
+
         if (ua.indexOf("Windows NT 10.0") > -1) os = "Windows 10/11";
         else if (ua.indexOf("Windows NT 6.2") > -1) os = "Windows 8";
         else if (ua.indexOf("Windows NT 6.1") > -1) os = "Windows 7";
@@ -100,7 +92,7 @@
         else if (ua.indexOf("Android") > -1) os = "Android OS";
         else if (ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) os = "iOS";
         else if (ua.indexOf("Linux") > -1) os = "Linux";
-        
+
         window.telemetryData.browser = browser;
         window.telemetryData.os = os;
     }
@@ -119,7 +111,7 @@
             tctx.fillText("imaginal.dev_telemetry_scan", 4, 4);
             tctx.fillStyle = "rgba(41, 128, 185, 0.6)";
             tctx.fillText("imaginal.dev_telemetry_scan", 6, 6);
-            
+
             const dataUrl = tc.toDataURL();
             let hash = 0;
             for (let i = 0; i < dataUrl.length; i++) {
@@ -152,7 +144,7 @@
             osc.connect(comp);
             comp.connect(oCtx.destination);
             osc.start(0);
-            
+
             oCtx.startRendering().then(buffer => {
                 let hash = 0;
                 const channelData = buffer.getChannelData(0);
@@ -172,12 +164,12 @@
         const fontsToCheck = ['Arial', 'Courier New', 'Consolas', 'Georgia', 'Impact', 'Times New Roman', 'Trebuchet MS', 'Verdana', 'Comic Sans MS', 'Ubuntu', 'Helvetica', 'Segoe UI', 'Monaco'];
         const detected = [];
         const testString = "mmmmmmmmmmlli";
-        
+
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.font = "72px monospace";
         const baseWidth = ctx.measureText(testString).width;
-        
+
         fontsToCheck.forEach(font => {
             ctx.font = `72px "${font}", monospace`;
             const width = ctx.measureText(testString).width;
@@ -195,7 +187,7 @@
             if (gl) {
                 window.telemetryData.gpuVendor = gl.getParameter(gl.VENDOR) || 'Unknown';
                 window.telemetryData.gpuRenderer = gl.getParameter(gl.RENDERER) || 'Unknown';
-                
+
                 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
                 if (!isFirefox) {
                     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
@@ -239,8 +231,6 @@
         }
     }
 
-    // Geo and weather come from our own /api endpoints, which resolve them on
-    // the edge. No third party ever sees a visitor's IP address.
     const GEO_URL = '/api/geo';
     const WEATHER_URL = '/api/weather';
     const GEO_TIMEOUT_MS = 5000;
@@ -278,9 +268,6 @@
 
     let warnedAboutEdge = false;
 
-    // Served without the Pages runtime - a plain static server, most likely -
-    // the /api endpoints are missing by design. That is a note, not a fault,
-    // so it is reported once and calmly.
     function warnAboutMissingEdge() {
         if (warnedAboutEdge) return;
         warnedAboutEdge = true;
@@ -298,7 +285,6 @@
         );
     }
 
-    // Single wording for "where am I", whichever source answered.
     function getLocationLabel() {
         const td = window.telemetryData;
         if (td.locationSource === 'browser') {
@@ -323,8 +309,7 @@
             td.timezone = geo.timezone || 'Europe/Moscow';
             return;
         }
-        // Nothing to go on. Location stays unset rather than being invented:
-        // a plausible-looking guess is worse than an honest blank.
+
         td.geoStatus = 'offline';
         td.locationSource = null;
         td.ip = 'IP Obfuscated';
@@ -339,8 +324,7 @@
         td.lat = coords.latitude;
         td.lon = coords.longitude;
         td.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local time';
-        // A reverse geocoder would be a third party again, so there is no city
-        // name here: the timezone and the coordinates are the honest labels.
+
         td.city = '';
         td.country = '';
     }
@@ -357,15 +341,12 @@
                     longitude: position.coords.longitude
                 }),
                 () => resolve(null),
-                // A cached fix is reused, so the permission prompt appears once.
+
                 { timeout: 10000, maximumAge: 600000, enableHighAccuracy: false }
             );
         });
     }
 
-    // Used only when a command explicitly needs a location and the edge could
-    // not supply one (typically when the site is served without the Pages
-    // runtime). The browser asks the visitor first.
     async function applyBrowserFallback() {
         const coords = await requestBrowserLocation();
         if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
@@ -386,7 +367,7 @@
     function applyWeather(weather) {
         const td = window.telemetryData;
         if (!weather) {
-            // No measurement: say so rather than inventing a plausible one.
+
             td.weatherCode = null;
             td.weatherText = 'no signal';
             td.temperature = 'unavailable';
@@ -422,12 +403,6 @@
         if (d.precipitation_sum && d.precipitation_sum[0] !== undefined) td.precipitation = `${d.precipitation_sum[0]} mm`;
     }
 
-    // Nothing about a visitor leaves the page until they touch it. The first
-    // pointer or key event (or the first command that needs the data) calls
-    // this; the result is memoised for the session and cached for a short
-    // while so a reload does not ask again.
-    // Memoised on its own so a refusal cannot turn into a prompt per command.
-    // The browser also remembers a denial, so there is nothing to re-ask.
     function startBrowserFallback() {
         if (!browserPromise) {
             browserPromise = applyBrowserFallback();
@@ -440,9 +415,6 @@
 
         if (geoPromise) return geoPromise;
 
-        // A failed edge lookup stays retryable, but not on every command. A
-        // command that is allowed to prompt must not be gated by that window:
-        // it would otherwise report "no signal" for up to GEO_RETRY_MS.
         if (Date.now() - lastGeoAttempt < GEO_RETRY_MS) {
             return allowPrompt ? startBrowserFallback() : Promise.resolve();
         }
@@ -464,16 +436,11 @@
             if (geo) {
                 applyGeo(geo);
                 applyWeather(weather);
-                // Only a successful lookup is worth remembering, and only the
-                // edge one: a stored browser fix would go stale the moment the
-                // visitor travels, whereas an IP-derived location self-corrects.
+
                 writeGeoCache(geo, weather);
                 return;
             }
 
-            // The edge could not answer. Only a command the visitor typed may
-            // escalate to a browser permission prompt - a passive visitor, or
-            // the first stray click, never triggers one.
             if (allowPrompt) {
                 await startBrowserFallback();
                 return;
@@ -518,7 +485,6 @@
         detectSeason();
     }
 
-    // Expose helpers globally
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.initTelemetry = initTelemetry;
     window.imaginalOS.ensureGeo = ensureGeo;

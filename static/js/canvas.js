@@ -4,11 +4,10 @@
 (function() {
     let canvas, ctx;
     let particles = [];
-    let currentSeason = 'summer'; // 'spring', 'summer', 'autumn', 'winter'
-    let currentWeather = 'clear'; // 'clear', 'clouds', 'rain', 'snow', 'storm'
+    let currentSeason = 'summer';
+    let currentWeather = 'clear';
     window.windVector = { x: 1.0, y: 0.0 };
 
-    // Local solar clock used by every sky, star and cloud calculation.
     const DAY_START = 5.0;
     const DAY_END = 20.5;
     const DUSK_START = 18.5;
@@ -18,19 +17,15 @@
     const WEATHER_TYPES = ['clear', 'clouds', 'rain', 'snow', 'storm'];
     const SEASON_TYPES = ['spring', 'summer', 'autumn', 'winter'];
 
-    // Cloud size/opacity per weather type. Storm fronts are bigger and denser.
     const CLOUD_LOOK = {
         storm: { scaleBase: 180, scaleRange: 120, opacityBase: 0.9, opacityRange: 0.1 },
         rain: { scaleBase: 140, scaleRange: 100, opacityBase: 0.85, opacityRange: 0.1 }
     };
     const DEFAULT_CLOUD_LOOK = { scaleBase: 110, scaleRange: 90, opacityBase: 0.82, opacityRange: 0.1 };
 
-    // Particles per active weather/season type.
     const PARTICLE_COUNTS = { rain: 100, storm: 180, snow: 90, summer: 35 };
     let activeParticleType = null;
 
-    // Hour of day as a float, e.g. 20.75 for 20:45. Cheap enough to call per
-    // frame, unlike allocating a Date.
     function currentLocalHour() {
         return currentHourOf(new Date());
     }
@@ -204,7 +199,7 @@
     ];
 
     let activeConstellation = null;
-    let constellationState = 'off'; // 'fade-in', 'visible', 'fade-out', 'off'
+    let constellationState = 'off';
     let constellationAlpha = 0;
     let constellationTimer = 0;
     let nextConstellationTime = Date.now() + 6000;
@@ -365,7 +360,7 @@
     window.imaginalOS.updateSkyAndStars = function(hour) {
         let currentStop = skyGradients[skyGradients.length - 1];
         let nextStop = skyGradients[0];
-        
+
         for (let i = 0; i < skyGradients.length; i++) {
             if (skyGradients[i].hour <= hour) {
                 currentStop = skyGradients[i];
@@ -380,23 +375,23 @@
         if (nextStop.hour === skyGradients[0].hour) {
             nextStop = skyGradients[0];
         }
-        
+
         let span = nextStop.hour - currentStop.hour;
         if (span < 0) span += 24;
-        
+
         let progress = hour - currentStop.hour;
         if (progress < 0) progress += 24;
-        
+
         const factor = span === 0 ? 0 : progress / span;
-        
+
         const skyTop = interpolateColor(currentStop.colors[0], nextStop.colors[0], factor);
         const skyMid = interpolateColor(currentStop.colors[1], nextStop.colors[1], factor);
         const skyBot = interpolateColor(currentStop.colors[2], nextStop.colors[2], factor);
-        
+
         document.documentElement.style.setProperty('--sky-top', skyTop);
         document.documentElement.style.setProperty('--sky-mid', skyMid);
         document.documentElement.style.setProperty('--sky-bot', skyBot);
-        
+
         let starsOpacity = 0;
         if (hour >= DAY_END || hour < DAY_START) {
             starsOpacity = 1;
@@ -405,7 +400,7 @@
         } else if (hour >= DAY_START && hour < DAWN_END) {
             starsOpacity = 1 - (hour - DAY_START) / (DAWN_END - DAY_START);
         }
-        
+
         const s1 = document.getElementById('stars');
         const s2 = document.getElementById('stars2');
         const s3 = document.getElementById('stars3');
@@ -452,8 +447,6 @@
         { cx: 38, cy: 45, r: 3 }
     ];
 
-    // Rendered twice per sky tick, so mask ids have to be unique: otherwise the
-    // browser keeps resolving url(#...) to the very first one in the document.
     let moonRenderCount = 0;
 
     function moonCraters(maskId, opacity) {
@@ -486,7 +479,7 @@
             case 6: rx = r * 0.25; sweepOuter = 0; sweepTerminator = 1; break;
             case 7: rx = r * 0.55; sweepOuter = 0; sweepTerminator = 0; break;
         }
-        
+
         const lightPath = `M ${cx} ${cy - r} A ${r} ${r} 0 0 ${sweepOuter} ${cx} ${cy + r} A ${rx} ${r} 0 0 ${sweepTerminator} ${cx} ${cy - r}`;
 
         return `<svg width="100%" height="100%" viewBox="0 0 90 90">
@@ -540,14 +533,14 @@
     window.imaginalOS.updateCelestial = function(hour) {
         const mainDiv = document.querySelector('.main');
         if (!mainDiv) return;
-        
+
         let bodyEl = document.querySelector('.celestial');
         if (!bodyEl) {
             bodyEl = document.createElement('div');
             bodyEl.className = 'celestial';
             mainDiv.insertBefore(bodyEl, mainDiv.firstChild);
         }
-        
+
         const isDay = hour >= DAY_START && hour < DAY_END;
         let t;
 
@@ -567,15 +560,15 @@
             const phase = getMoonPhase(now.getFullYear(), now.getMonth() + 1, now.getDate());
             bodyEl.innerHTML = getMoonSvg(phase);
         }
-        
+
         const left = 5 + 90 * t;
         const top = 60 - 45 * Math.sin(Math.PI * t);
-        
+
         bodyEl.style.left = `${left}%`;
         bodyEl.style.top = `${top}vh`;
         bodyEl.style.position = 'absolute';
         bodyEl.style.zIndex = '2';
-        
+
         const oldMoon = document.querySelector('.main > .moon:not(.celestial)');
         if (oldMoon) {
             oldMoon.remove();
@@ -619,7 +612,7 @@
         const scale = Math.min(canvas.width, canvas.height);
         const cx = (activeConstellation.cx / 100) * canvas.width;
         const cy = (activeConstellation.cy / 100) * canvas.height;
-        
+
         activeConstellation.stars.forEach((star, idx) => {
             const sx = cx + star.dx * scale;
             const sy = cy + star.dy * scale;
@@ -627,7 +620,7 @@
             const shimmer = 0.5 + 0.8 * Math.sin(Date.now() * 0.0012 + offset);
             const starAlpha = Math.max(0, Math.min(1, shimmer)) * currentOpacity;
             const starRadius = 1.5 + 0.8 * Math.sin(Date.now() * 0.0012 + offset);
-            
+
             if (starAlpha > 0.01) {
                 ctx.beginPath();
                 ctx.arc(sx, sy, starRadius, 0, Math.PI * 2);
@@ -661,8 +654,6 @@
         });
     }
 
-    // Cloud tint follows the same clock as the sky: dark at night, warm at
-    // dusk, cold at dawn, near-black during a storm.
     function cloudTintFor(hour) {
         if (currentWeather === 'storm') return { r: 12, g: 15, b: 22 };
         if (hour >= DAY_END || hour < DAY_START) return { r: 10, g: 14, b: 24 };
@@ -775,7 +766,6 @@
         ctx.restore();
     }
 
-    // Rarely, one cloud reshapes itself into a BMO easter egg for a while.
     function morphEasterEggCloud() {
         if (Math.random() >= 0.0006 || cloudsArray.length === 0 || cloudsArray.some(c => c.isEasterEgg)) {
             return;
@@ -809,14 +799,14 @@
         } else if (hour >= 17.0 && hour < DAY_END) {
             baseColor = { r: 24, g: 12, b: 35 };
         }
-        
+
         const layers = [
             { base: 90, amp1: 12, amp2: 6, freq1: 0.004, freq2: 0.01, speed: 0.25, opacity: 0.35 },
             { base: 75, amp1: 10, amp2: 4, freq1: 0.006, freq2: 0.012, speed: -0.4, opacity: 0.55 },
             { base: 60, amp1: 14, amp2: 7, freq1: 0.005, freq2: 0.008, speed: 0.5, opacity: 0.75 },
             { base: 45, amp1: 8, amp2: 3, freq1: 0.008, freq2: 0.015, speed: -0.7, opacity: 0.92 }
         ];
-        
+
         ctx.save();
         layers.forEach((lyr) => {
             ctx.beginPath();
@@ -1049,7 +1039,7 @@
 
     function renderWeatherLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         if (currentWeather === 'storm') {
             if (Math.random() < 0.003 && !isLightningActive) {
                 triggerLightning();
@@ -1061,7 +1051,7 @@
                 ctx.restore();
             }
         }
-        
+
         const currentHour = currentLocalHour();
 
         let maxAlpha = 0.35;
@@ -1074,7 +1064,7 @@
         updateConstellations();
         drawConstellations(maxAlpha);
         updateAndDrawClouds(currentHour);
-        
+
         if (Math.random() < 0.0003 && maxAlpha > 0.34) {
             shootingStars.push({
                 x: Math.random() * canvas.width * 0.75,
@@ -1087,7 +1077,7 @@
                 decay: 0.02 + Math.random() * 0.025
             });
         }
-        
+
         ctx.save();
         for (let i = shootingStars.length - 1; i >= 0; i--) {
             const s = shootingStars[i];
@@ -1106,16 +1096,14 @@
             ctx.stroke();
         }
         ctx.restore();
-        
+
         let particleType = currentWeather;
         if (currentWeather === 'clear') {
             particleType = currentSeason;
         }
-        
+
         const desiredCount = PARTICLE_COUNTS[particleType] || 45;
 
-        // Only re-filter when the requested particle type actually changed,
-        // otherwise this allocates a new array on every single frame.
         if (activeParticleType !== particleType) {
             activeParticleType = particleType;
             particles = particles.filter(p => p.type === particleType);
@@ -1123,16 +1111,16 @@
         while (particles.length < desiredCount) {
             particles.push(new Particle(particleType));
         }
-        
+
         particles.forEach(p => {
             p.update(mouse.x, mouse.y);
             p.draw();
         });
-        
+
         if (particleType === 'rain' || particleType === 'storm') {
             updateAndDrawSplashes();
         }
-        
+
         drawCanvasWaves(currentHour);
         requestAnimationFrame(renderWeatherLoop);
     }
@@ -1149,7 +1137,7 @@
         canvas.style.pointerEvents = 'none';
         canvas.style.zIndex = '4';
         document.body.appendChild(canvas);
-        
+
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;

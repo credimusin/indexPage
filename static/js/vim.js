@@ -6,14 +6,13 @@
 
     let vimFileNode = null;
     let vimFileName = '';
-    let vimMode = 'normal'; // 'normal', 'insert', 'colon'
+    let vimMode = 'normal';
     let vimEditorEl = null;
     let vimTextarea = null;
     let vimStatusLabel = null;
     let vimColonBar = null;
     let vimColonInput = null;
 
-    // Splits a "dir/file" argument the same way ls/cat/mkdir do.
     function splitTarget(pathStr) {
         let name = pathStr;
         let dirPath = '.';
@@ -86,7 +85,7 @@
                     <div style="text-align: center; color: #8892b0; font-size: 11px;">by Maksim B</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 13px; margin-top: 18px; font-style: italic; text-shadow: 0 0 8px rgba(255, 121, 198, 0.4);">"From here, you can never truly escape!"</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 11px; margin-top: 2px;">(Just kidding, type :q! to force quit)</div>
-                    
+
                     <div style="margin: 25px auto 15px auto; max-width: 380px; color: #a8b2d1; font-size: 12px; line-height: 1.6;">
                         <div style="display: flex; justify-content: space-between;">
                             <span>Type <span style="color: #00ff80; font-weight: bold;">i</span></span>
@@ -131,7 +130,7 @@
 
     function handleVimKey(e) {
         if (vimMode === 'normal') {
-            // Block standard editing shortcuts while in Command Mode
+
             if (e.key !== 'F5' && e.key !== 'F12') {
                 e.preventDefault();
             }
@@ -140,10 +139,10 @@
                 vimMode = 'insert';
                 vimTextarea.removeAttribute('readonly');
                 vimTextarea.focus();
-                
+
                 const splash = vimEditorEl.querySelector('.vim-splash');
                 if (splash) splash.style.display = 'none';
-                
+
                 updateVimStatus();
             } else if (e.key === ':') {
                 vimMode = 'colon';
@@ -159,12 +158,12 @@
                 vimTextarea.setAttribute('readonly', 'true');
                 vimTextarea.blur();
                 vimEditorEl.focus();
-                
+
                 if (!vimTextarea.value) {
                     const splash = vimEditorEl.querySelector('.vim-splash');
                     if (splash) splash.style.display = 'block';
                 }
-                
+
                 updateVimStatus();
             }
         } else if (vimMode === 'colon') {
@@ -206,8 +205,6 @@
         };
     }
 
-    // Every non-writing colon command ends the same way: drop out of COMMAND
-    // mode, redraw the status bar and report the outcome.
     function leaveColonMode(message, isError = false) {
         vimMode = 'normal';
         vimColonBar.style.display = 'none';
@@ -277,7 +274,6 @@
         }
         window.imaginalOS.shellState = 'normal';
 
-        // Re-enable console displays
         if (window.imaginalOS.terminalOutput) window.imaginalOS.terminalOutput.style.display = 'block';
         if (window.imaginalOS.terminalInput && window.imaginalOS.terminalInput.parentNode) window.imaginalOS.terminalInput.parentNode.style.display = 'flex';
         if (window.imaginalOS.terminalHintBar) window.imaginalOS.terminalHintBar.style.display = 'block';
@@ -299,7 +295,6 @@
         }
     }
 
-    // Expose on namespace
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.runVim = runVim;
     window.imaginalOS.handleVimKey = handleVimKey;

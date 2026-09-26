@@ -3,16 +3,14 @@
  */
 (function() {
     const FRAME_MS = 1000 / 60;
-    // Lower bound only: the playfield tracks the terminal body, and the world
-    // wraps, so any size plays identically. The floor stops a minimised or
-    // collapsed terminal from producing a zero-sized canvas.
+
     const MIN_CANVAS = 320;
 
     let canvas = null;
     let ctx = null;
     let gameEl = null;
     let gameActive = false;
-    let gameState = 'MENU'; // MENU, COUNTDOWN, PLAYING, GAMEOVER, PAUSED
+    let gameState = 'MENU';
     let score = 0;
     let highScore = 0;
     let lives = 3;
@@ -30,7 +28,6 @@
     let frameScale = 1;
     let canvasObserver = null;
 
-    // Helper to play beeps using the synth engine from sound.js
     function playBeep(freq, duration, type) {
         if (window.playBeepSound) {
             window.playBeepSound(freq, duration, type);
@@ -38,21 +35,19 @@
     }
 
     function launchSpaceRock() {
-        // Never stack two arcade sessions on the same terminal body.
+
         if (gameActive) {
             exitGame();
         }
 
         window.imaginalOS.shellState = 'spacerock';
 
-        // Hide terminal output, input, and hint bar
         window.imaginalOS.terminalOutput.style.display = 'none';
         window.imaginalOS.terminalInput.parentNode.style.display = 'none';
         if (window.imaginalOS.terminalHintBar) {
             window.imaginalOS.terminalHintBar.style.display = 'none';
         }
 
-        // Create the container
         gameEl = document.createElement('div');
         gameEl.className = 'spacerock-game';
         gameEl.innerHTML = `
@@ -65,8 +60,6 @@
         canvas = gameEl.querySelector('#spacerockCanvas');
         fitCanvasToBox();
 
-        // The playfield is sized from CSS, so it has to follow the terminal:
-        // maximising or restoring changes the box without a window resize.
         if (typeof ResizeObserver !== 'undefined') {
             canvasObserver = new ResizeObserver(() => fitCanvasToBox());
             canvasObserver.observe(canvas.parentElement);
@@ -91,7 +84,6 @@
         resetShip();
         bindEvents();
 
-        // Play a nice initialization coin-up sound!
         playBeep(440, 0.08, 'sine');
         setTimeout(() => playBeep(880, 0.12, 'sine'), 80);
 
@@ -99,11 +91,6 @@
         tick();
     }
 
-    // Fill the available box exactly, so there is no panel edge and no dead
-    // margin. The floor stops a minimised or collapsed terminal from handing
-    // canvas.width a negative number, which the DOM would turn into an
-    // unsigned 4-gigabyte bitmap. Entities outside a resized world simply wrap
-    // back in on the next update, so resizing mid-game is safe.
     function fitCanvasToBox() {
         if (!canvas) return;
         const parent = canvas.parentElement;
@@ -123,11 +110,11 @@
             y: canvas.height / 2,
             vx: 0,
             vy: 0,
-            angle: -Math.PI / 2, // facing straight up
+            angle: -Math.PI / 2,
             radius: 13,
             rotation: 0,
             thrusting: false,
-            invulnerableTime: 120, // 2 seconds invuln
+            invulnerableTime: 120,
             shootCooldown: 0
         };
     }
@@ -136,13 +123,13 @@
         asteroids = [];
         for (let i = 0; i < count; i++) {
             let x, y;
-            // Spawning away from the center ship
+
             do {
                 x = Math.random() * canvas.width;
                 y = Math.random() * canvas.height;
             } while (distBetweenPoints(x, y, canvas.width / 2, canvas.height / 2) < 100);
 
-            asteroids.push(createAsteroid(x, y, 40)); // Large
+            asteroids.push(createAsteroid(x, y, 40));
         }
     }
 
@@ -152,7 +139,7 @@
                                       1.6 + Math.random() * 0.8;
         const angle = Math.random() * Math.PI * 2;
         const points = [];
-        const segments = 8 + Math.floor(Math.random() * 5); // 8 to 12 vertices
+        const segments = 8 + Math.floor(Math.random() * 5);
 
         for (let i = 0; i < segments; i++) {
             const a = (i / segments) * Math.PI * 2;
@@ -248,7 +235,6 @@
 
         window.imaginalOS.shellState = 'normal';
 
-        // Re-enable console displays
         window.imaginalOS.terminalOutput.style.display = 'block';
         window.imaginalOS.terminalInput.parentNode.style.display = 'flex';
         if (window.imaginalOS.terminalHintBar) {
@@ -261,15 +247,12 @@
         window.imaginalOS.terminalOutput.scrollTop = window.imaginalOS.terminalOutput.scrollHeight;
     }
 
-    // The simulation below is authored in 60fps units. Measuring the real frame
-    // time and scaling by it keeps the game identical on 60Hz, 120Hz and on
-    // machines that drop frames, instead of running at double or half speed.
     function measureFrameScale(now) {
         if (!lastFrameTime) {
             lastFrameTime = now;
             return;
         }
-        // Clamp so a background tab or a long stall cannot teleport the ship.
+
         const elapsed = Math.min(now - lastFrameTime, FRAME_MS * 5);
         lastFrameTime = now;
         frameScale = elapsed / FRAME_MS;
@@ -278,7 +261,6 @@
     function tick(now) {
         if (!gameActive) return;
 
-        // Auto-cleanup check
         if (!gameEl || !document.body.contains(gameEl)) {
             exitGame();
             return;
@@ -301,7 +283,7 @@
 
     function startRound() {
         gameState = 'COUNTDOWN';
-        countdownTimer = 180; // 3 seconds at 60fps
+        countdownTimer = 180;
         score = 0;
         lives = 3;
         level = 1;
@@ -314,7 +296,7 @@
         const dt = frameScale;
 
         if (gameState === 'COUNTDOWN') {
-            // Let asteroids drift in background
+
             for (let i = 0; i < asteroids.length; i++) {
                 const a = asteroids[i];
                 a.x += a.vx * dt;
@@ -323,7 +305,6 @@
             }
             updateParticles();
 
-            // Countdown audio triggers
             const currentSec = Math.ceil(countdownTimer / 60);
             countdownTimer -= dt;
             const nextSec = Math.ceil(countdownTimer / 60);
@@ -347,13 +328,11 @@
             return;
         }
 
-        // 1. Rotate ship
         let rotDir = 0;
         if (keys['ArrowLeft'] || keys['a']) rotDir -= 1;
         if (keys['ArrowRight'] || keys['d']) rotDir += 1;
         ship.angle += rotDir * 0.055 * dt;
 
-        // 2. Thrust ship
         ship.thrusting = keys['ArrowUp'] || keys['w'];
         if (ship.thrusting) {
             ship.vx += Math.cos(ship.angle) * 0.125 * dt;
@@ -361,12 +340,10 @@
             spawnEngineExhaust();
         }
 
-        // Damping (Friction)
         const damping = Math.pow(0.985, dt);
         ship.vx *= damping;
         ship.vy *= damping;
 
-        // Speed cap
         const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
         const maxSpeed = 5.5;
         if (speed > maxSpeed) {
@@ -374,32 +351,27 @@
             ship.vy = (ship.vy / speed) * maxSpeed;
         }
 
-        // Apply movement
         ship.x += ship.vx * dt;
         ship.y += ship.vy * dt;
 
-        // Wrap edges
         if (ship.x < -ship.radius) ship.x = canvas.width + ship.radius;
         if (ship.x > canvas.width + ship.radius) ship.x = -ship.radius;
         if (ship.y < -ship.radius) ship.y = canvas.height + ship.radius;
         if (ship.y > canvas.height + ship.radius) ship.y = -ship.radius;
 
-        // Invuln timer
         if (ship.invulnerableTime > 0) {
             ship.invulnerableTime -= dt;
         }
 
-        // 3. Fire Lasers
         if (ship.shootCooldown > 0) {
             ship.shootCooldown -= dt;
         }
 
         if (keys[' '] && ship.shootCooldown <= 0) {
             fireLasers();
-            ship.shootCooldown = 14; // shoot cooldown, in 60fps frames
+            ship.shootCooldown = 14;
         }
 
-        // 4. Update lasers
         for (let i = lasers.length - 1; i >= 0; i--) {
             const l = lasers[i];
             l.x += l.vx * dt;
@@ -416,7 +388,6 @@
             }
         }
 
-        // 5. Update asteroids
         for (let i = 0; i < asteroids.length; i++) {
             const a = asteroids[i];
             a.x += a.vx * dt;
@@ -424,10 +395,8 @@
             wrapAsteroid(a);
         }
 
-        // 6. Update particles
         updateParticles();
 
-        // 7. Hit detection: Lasers vs Asteroids
         for (let lIdx = lasers.length - 1; lIdx >= 0; lIdx--) {
             const l = lasers[lIdx];
             for (let aIdx = asteroids.length - 1; aIdx >= 0; aIdx--) {
@@ -440,7 +409,6 @@
             }
         }
 
-        // 8. Hit detection: Ship vs Asteroids
         if (ship.invulnerableTime <= 0) {
             for (let i = 0; i < asteroids.length; i++) {
                 const a = asteroids[i];
@@ -451,7 +419,6 @@
             }
         }
 
-        // 9. Next wave check
         if (asteroids.length === 0 && !isTransitioningLevel) {
             isTransitioningLevel = true;
             levelTransitionTimer = 110;
@@ -471,7 +438,6 @@
         }
     }
 
-    // Engine particles spawning from both nozzles
     function spawnEngineExhaust() {
         if (Math.random() >= 0.6) return;
 
@@ -506,11 +472,9 @@
         const sin = Math.sin(ship.angle);
         const laserSpeed = 8.0;
 
-        // Left wing gun tip
         const lx = ship.x + (R * 0.25) * cos - (-R * 0.75) * sin;
         const ly = ship.y + (R * 0.25) * sin + (-R * 0.75) * cos;
 
-        // Right wing gun tip
         const rx = ship.x + (R * 0.25) * cos - (R * 0.75) * sin;
         const ry = ship.y + (R * 0.25) * sin + (R * 0.75) * cos;
 
@@ -523,7 +487,6 @@
             });
         }
 
-        // Dual shot retro beep effects
         playBeep(720, 0.03, 'sine');
         setTimeout(() => playBeep(720, 0.03, 'sine'), 40);
     }
@@ -537,13 +500,11 @@
             localStorage.setItem('imaginalOS_spacerock_highscore', highScore);
         }
 
-        // Sweep down explosion sound
         playBeep(180 - (a.radius * 2), 0.12, 'sawtooth');
 
-        // Explode particles
         const count = a.radius === 40 ? 20 : a.radius === 20 ? 12 : 7;
         const color = a.radius === 40 ? '#bd93f9' : a.radius === 20 ? '#50fa7b' : '#ffb86c';
-        
+
         for (let i = 0; i < count; i++) {
             const pAngle = Math.random() * Math.PI * 2;
             const pSpeed = 0.6 + Math.random() * 2.2;
@@ -559,7 +520,6 @@
             });
         }
 
-        // Split
         if (a.radius > 10) {
             const nextRadius = a.radius === 40 ? 20 : 10;
             asteroids.push(createAsteroid(a.x, a.y, nextRadius));
@@ -576,7 +536,6 @@
             window.playGlitchSound();
         }
 
-        // Crash fire particles
         for (let i = 0; i < 35; i++) {
             const pAngle = Math.random() * Math.PI * 2;
             const pSpeed = 1.2 + Math.random() * 3.5;
@@ -616,7 +575,6 @@
         ctx.translate(x, y);
         ctx.scale(scale, scale);
 
-        // Stylized glowing retro asteroid (centered around x = 0, y = 0)
         ctx.strokeStyle = '#bd93f9';
         ctx.shadowColor = '#bd93f9';
         ctx.shadowBlur = 10;
@@ -639,7 +597,6 @@
         ctx.fillStyle = '#050811';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Retro tech grid lines
         ctx.strokeStyle = 'rgba(0, 255, 128, 0.025)';
         ctx.lineWidth = 1;
         const spacing = 45;
@@ -700,27 +657,24 @@
 
         const R = ship.radius;
 
-        // Draw Left Wing
         ctx.strokeStyle = '#64ffda';
         ctx.shadowColor = '#64ffda';
         ctx.shadowBlur = 6;
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(-R * 0.3, -R * 0.3);
-        ctx.lineTo(-R * 0.5, -R * 0.95); // wing tip
+        ctx.lineTo(-R * 0.5, -R * 0.95);
         ctx.lineTo(-R * 0.8, -R * 0.95);
         ctx.lineTo(-R * 0.6, -R * 0.3);
         ctx.stroke();
 
-        // Draw Right Wing
         ctx.beginPath();
         ctx.moveTo(-R * 0.3, R * 0.3);
-        ctx.lineTo(-R * 0.5, R * 0.95); // wing tip
+        ctx.lineTo(-R * 0.5, R * 0.95);
         ctx.lineTo(-R * 0.8, R * 0.95);
         ctx.lineTo(-R * 0.6, R * 0.3);
         ctx.stroke();
 
-        // Draw Left Gun Barrel
         ctx.strokeStyle = '#00ff80';
         ctx.shadowColor = '#00ff80';
         ctx.beginPath();
@@ -728,27 +682,24 @@
         ctx.lineTo(R * 0.25, -R * 0.75);
         ctx.stroke();
 
-        // Draw Right Gun Barrel
         ctx.beginPath();
         ctx.moveTo(-R * 0.6, R * 0.75);
         ctx.lineTo(R * 0.25, R * 0.75);
         ctx.stroke();
 
-        // Draw Main Body / Fuselage
         ctx.strokeStyle = '#64ffda';
         ctx.shadowColor = '#64ffda';
         ctx.beginPath();
-        ctx.moveTo(R * 1.1, 0); // Nose tip
-        ctx.lineTo(0, -R * 0.35); // Left fuselage
-        ctx.lineTo(-R * 0.7, -R * 0.35); // Left back
-        ctx.lineTo(-R * 0.85, -R * 0.15); // Left engine
-        ctx.lineTo(-R * 0.85, R * 0.15); // Right engine
-        ctx.lineTo(-R * 0.7, R * 0.35); // Right back
-        ctx.lineTo(0, R * 0.35); // Right fuselage
+        ctx.moveTo(R * 1.1, 0);
+        ctx.lineTo(0, -R * 0.35);
+        ctx.lineTo(-R * 0.7, -R * 0.35);
+        ctx.lineTo(-R * 0.85, -R * 0.15);
+        ctx.lineTo(-R * 0.85, R * 0.15);
+        ctx.lineTo(-R * 0.7, R * 0.35);
+        ctx.lineTo(0, R * 0.35);
         ctx.closePath();
         ctx.stroke();
 
-        // Draw Canopy (Cockpit)
         ctx.strokeStyle = '#00ff80';
         ctx.shadowColor = '#00ff80';
         ctx.beginPath();
@@ -759,19 +710,16 @@
         ctx.closePath();
         ctx.stroke();
 
-        // Engine flames
         if (ship.thrusting && Math.random() < 0.75) {
             ctx.strokeStyle = '#ff79c6';
             ctx.shadowColor = '#ff79c6';
-            
-            // Left nozzle flame
+
             ctx.beginPath();
             ctx.moveTo(-R * 0.85, -R * 0.12);
             ctx.lineTo(-R * 1.5 - Math.random() * 6, -R * 0.08);
             ctx.lineTo(-R * 0.85, -R * 0.04);
             ctx.stroke();
 
-            // Right nozzle flame
             ctx.beginPath();
             ctx.moveTo(-R * 0.85, R * 0.04);
             ctx.lineTo(-R * 1.5 - Math.random() * 6, R * 0.08);
@@ -856,8 +804,7 @@
 
     function drawMenu() {
         ctx.save();
-        
-        // Draw the vector logo at the top
+
         drawVectorLogo(canvas.width / 2, canvas.height / 3 - 35, 1.0);
 
         ctx.textAlign = 'center';
@@ -888,21 +835,18 @@
 
     function drawCountdown() {
         ctx.save();
-        
-        // Semi-transparent overlay to focus on the countdown
+
         ctx.fillStyle = 'rgba(5, 8, 17, 0.4)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.textAlign = 'center';
-        
-        // Render logo in background of countdown
+
         drawVectorLogo(canvas.width / 2, canvas.height / 3 - 35, 0.95);
-        
-        // Countdown text
+
         const secRemaining = Math.ceil(countdownTimer / 60);
         let displayText = '';
         let displayColor = '#00ff80';
-        
+
         if (secRemaining === 3) {
             displayText = '3';
             displayColor = '#ff5555';
@@ -921,15 +865,14 @@
         ctx.shadowColor = displayColor;
         ctx.shadowBlur = 15;
         ctx.font = 'bold 54px monospace';
-        
-        // Add a pulsing effect to the countdown number
+
         const pulse = 1.0 + 0.18 * Math.sin((countdownTimer % 60) / 60 * Math.PI);
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2 + 50);
         ctx.scale(pulse, pulse);
         ctx.fillText(displayText, 0, 0);
         ctx.restore();
-        
+
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#a8b2d1';
         ctx.font = '13px monospace';

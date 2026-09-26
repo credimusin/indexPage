@@ -9,10 +9,8 @@
 
     const FALLBACK_VERSION = '0.9.1';
 
-    // Exposed synchronously so no module ever has to read a half-loaded value.
     window.imaginalOS.VERSION = FALLBACK_VERSION;
 
-    // Deferred subsystems must await this before snapshotting the version.
     window.imaginalOS.VERSION_READY = (async () => {
         try {
             const res = await fetch('/package.json');
@@ -36,13 +34,39 @@
             .replace(/'/g, "&#039;");
     };
 
-    // Single-flight <script> injector. Concurrent callers share one request,
-    // and a failed load is forgotten so a later attempt can retry.
-    //
-    // The URL carries the version so a browser that cached a previous copy of
-    // a terminal module cannot end up mixing old and new files in one session:
-    // without it, a cached pre-refactor commands.js would pair with a fresh
-    // app.js and half the commands would quietly stop working.
+    const cspViolations = [];
+
+    window.addEventListener('securitypolicyviolation', (event) => {
+        const record = {
+            directive: event.effectiveDirective || event.violatedDirective || 'unknown',
+            blocked: event.blockedURI || 'inline',
+            source: event.sourceFile || '',
+            sample: (event.sample || '').slice(0, 200)
+        };
+        const key = record.directive + '|' + record.blocked + '|' + record.sample;
+        if (!cspViolations.some((v) => v.key === key)) {
+            record.key = key;
+            cspViolations.push(record);
+        }
+    });
+
+    window.imaginalOS.cspReport = function() {
+        if (cspViolations.length === 0) {
+            console.log('%c[imaginalOS] No CSP violations were recorded on this page.', 'color: #27ae60');
+            return cspViolations;
+        }
+
+        console.group('%c[imaginalOS] ' + cspViolations.length + ' blocked resource(s)', 'color: #e67e22; font-weight: bold');
+        cspViolations.forEach((v, i) => {
+            console.log('%d. %s blocked "%s"', i + 1, v.directive, v.blocked);
+            if (v.source) console.log('     came from: ' + v.source);
+            if (v.sample) console.log('     code: ' + v.sample);
+        });
+        console.log('%cIf the source is an extension or a bookmarklet, it is not the site: nothing in this project uses inline scripts.', 'color: #8892b0');
+        console.groupEnd();
+        return cspViolations;
+    };
+
     const scriptLoads = new Map();
 
     window.imaginalOS.loadScript = function(src) {

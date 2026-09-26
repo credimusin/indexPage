@@ -3,13 +3,13 @@
  */
 
 (function() {
-    // Shared State Initialization
+
     window.imaginalOS = window.imaginalOS || {};
     window.imaginalOS.shellState = 'normal';
     window.imaginalOS.commandHistory = [];
-    
+
     let historyIndex = -1;
-    
+
     let terminalContainer = null;
     let terminalOutput = null;
     let terminalPromptSymbol = null;
@@ -18,7 +18,6 @@
     let terminalHintBar = null;
     let scrollIndicator = null;
 
-    // Keystroke & Beep Audio Synthesiser clicks are provided globally by sound.js
     const playKeySound = () => window.playKeySound && window.playKeySound();
     const playBeepSound = (f, d, t) => window.playBeepSound && window.playBeepSound(f, d, t);
 
@@ -33,12 +32,11 @@
         }
     }
 
-    // Terminal DOM Builder
     function createTerminalDOM() {
         terminalContainer = document.createElement('div');
         terminalContainer.id = 'terminal-window';
         terminalContainer.className = 'terminal-window';
-        
+
         const header = document.createElement('div');
         header.className = 'terminal-header';
         header.innerHTML = `
@@ -50,12 +48,12 @@
             <div class="terminal-title">bmo@imaginal.dev: ~ (bush)</div>
             <div style="width: 50px;"></div>
         `;
-        
+
         terminalContainer.appendChild(header);
-        
+
         const body = document.createElement('div');
         body.className = 'terminal-body';
-        
+
         terminalOutput = document.createElement('div');
         terminalOutput.className = 'terminal-output';
         body.appendChild(terminalOutput);
@@ -78,39 +76,38 @@
 
         terminalOutput.addEventListener('scroll', updateScrollIndicator);
         window.addEventListener('resize', updateScrollIndicator);
-        
+
         terminalHintBar = document.createElement('div');
         terminalHintBar.className = 'terminal-hint-bar';
         body.appendChild(terminalHintBar);
-        
+
         const inputLine = document.createElement('div');
         inputLine.className = 'terminal-input-line';
-        
+
         terminalPromptSymbol = document.createElement('span');
         terminalPromptSymbol.className = 'terminal-prompt-symbol';
         terminalPromptSymbol.innerHTML = getPromptString();
         inputLine.appendChild(terminalPromptSymbol);
-        
+
         const inputContainer = document.createElement('div');
         inputContainer.className = 'terminal-input-container';
-        
+
         terminalCmdBuffer = document.createElement('span');
         terminalCmdBuffer.className = 'terminal-command-buffer';
         inputContainer.appendChild(terminalCmdBuffer);
-        
+
         terminalInput = document.createElement('input');
         terminalInput.type = 'text';
         terminalInput.className = 'terminal-hidden-input';
         terminalInput.autofocus = true;
         terminalInput.spellcheck = false;
         inputContainer.appendChild(terminalInput);
-        
+
         inputLine.appendChild(inputContainer);
         body.appendChild(inputLine);
         terminalContainer.appendChild(body);
         document.body.appendChild(terminalContainer);
 
-        // Copy secret values to clipboard on click
         terminalOutput.addEventListener('click', (e) => {
             const target = e.target;
             if (target && (target.classList.contains('secret') || target.hasAttribute('data-copy'))) {
@@ -137,7 +134,6 @@
             }
         });
 
-        // Bind clicks to hidden input focus
         body.addEventListener('click', (e) => {
             if (e.target.tagName !== 'A' && e.target.closest('a') === null) {
                 if (window.imaginalOS.shellState !== 'vim' && window.imaginalOS.shellState !== 'spacerock') {
@@ -146,7 +142,6 @@
             }
         });
 
-        // Window Controls
         header.querySelector('.dot.close').addEventListener('click', (e) => {
             e.stopPropagation();
             closeTerminal();
@@ -160,19 +155,16 @@
             toggleMaximize();
         });
 
-        // Bring to front on mousedown
         terminalContainer.addEventListener('mousedown', () => {
             if (window.imaginalOS.bringToFront) {
                 window.imaginalOS.bringToFront(terminalContainer);
             }
         });
 
-        // Enable dragging window by header
         if (window.imaginalOS.makeWindowDraggable) {
             window.imaginalOS.makeWindowDraggable(terminalContainer, header);
         }
 
-        // Click on minimized bubble to restore it
         terminalContainer.addEventListener('click', (e) => {
             if (terminalContainer.classList.contains('minimized')) {
                 e.stopPropagation();
@@ -181,13 +173,12 @@
             }
         });
 
-        // Track Input Buffers
         terminalInput.addEventListener('input', () => {
             syncInputBuffer();
             playKeySound();
             resetHintTimer();
         });
-        
+
         terminalInput.addEventListener('keyup', () => {
             syncInputBuffer();
         });
@@ -202,7 +193,6 @@
 
         terminalInput.addEventListener('keydown', handleKeyDown);
 
-        // Expose DOM elements on namespace
         window.imaginalOS.terminalContainer = terminalContainer;
         window.imaginalOS.terminalOutput = terminalOutput;
         window.imaginalOS.terminalInput = terminalInput;
@@ -211,7 +201,6 @@
         window.imaginalOS.terminalHintBar = terminalHintBar;
     }
 
-    // Inactivity Hints Engine
     let hintBarTimeout = null;
     let hintBarHideTimeout = null;
     let isHintVisible = false;
@@ -222,7 +211,7 @@
         }
         if (hintBarTimeout) clearTimeout(hintBarTimeout);
         if (hintBarHideTimeout) clearTimeout(hintBarHideTimeout);
-        
+
         hintBarTimeout = setTimeout(showHintBar, 30000);
     }
 
@@ -252,7 +241,7 @@
             terminalHintBar.classList.remove('visible');
         }
         if (hintBarHideTimeout) clearTimeout(hintBarHideTimeout);
-        
+
         hintBarTimeout = setTimeout(showHintBar, 30000);
     }
 
@@ -274,12 +263,9 @@
         }
     }
 
-    // Output Logger
     function writeOutput(text) {
         if (!terminalOutput) return;
-        // insertAdjacentHTML, not innerHTML +=: re-serialising the whole buffer
-        // on every line both grows quadratically and detaches the live nodes
-        // that the typewriter effect is currently writing into.
+
         terminalOutput.insertAdjacentHTML('beforeend', wrapEmoji(text));
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
         setTimeout(updateScrollIndicator, 10);
@@ -304,7 +290,6 @@
     }
     window.imaginalOS.syncInputBuffer = syncInputBuffer;
 
-    // Prompt generator
     function getPromptString() {
         if (window.imaginalOS.shellState === 'sudo_password') {
             return `[sudo] password for bmo: `;
@@ -316,7 +301,6 @@
         return `<a href="mailto:bmo@imaginal.dev" class="usr" style="text-decoration: none; color: inherit; cursor: pointer;">bmo@imaginal.dev</a>:<span class="pth">${pathStr}</span>$ `;
     }
 
-    // Key interceptor for commands
     async function handleKeyDown(e) {
         resetHintTimer();
 
@@ -382,8 +366,6 @@
         const cmdId = 'cmd-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
         writeOutput(`<div id="${cmdId}">${getPromptString()}${os.escapeHtml(rawCmd)}</div>`);
 
-        // Dispatch only: every branch hands off to a command implementation,
-        // so this file stays responsible for the shell, not for output text.
         switch (cmd) {
             case 'help':
             case 'commands':
@@ -562,7 +544,7 @@
 
     function showTabMatches(matches) {
         if (!terminalHintBar) return;
-        
+
         const formatted = matches.map(m => {
             const res = window.imaginalOS.resolvePath(m);
             if (!res.error && res.node) {
@@ -576,21 +558,21 @@
             }
             return `<span class="cmd">${m}</span>`;
         }).join('&nbsp;&nbsp;&nbsp;&nbsp;');
-        
+
         terminalHintBar.innerHTML = wrapEmoji(`<span class="hint-prefix">Tab Complete:</span> ` + formatted);
         terminalHintBar.classList.add('visible');
         isHintVisible = true;
-        
+
         if (hintBarTimeout) clearTimeout(hintBarTimeout);
         if (hintBarHideTimeout) clearTimeout(hintBarHideTimeout);
-        
+
         hintBarHideTimeout = setTimeout(hideHintBar, 8000);
     }
 
     function handleTabComplete() {
         const inputVal = terminalInput.value.trim();
         const parts = inputVal.split(' ');
-        
+
         if (parts.length === 1) {
             const cmd = parts[0].toLowerCase();
             const matches = window.imaginalOS.ALL_COMMAND_NAMES.filter(c => c.startsWith(cmd));
@@ -602,7 +584,7 @@
             }
         } else if (parts.length === 2) {
             const arg = parts[1];
-            
+
             const res = window.imaginalOS.resolvePath('.');
             if (window.imaginalOS.hasChildren(res.node)) {
                 const names = Object.keys(res.node.children);
@@ -621,16 +603,15 @@
         }
     }
 
-    // Toggle Console Window
     function openTerminal() {
         if (!terminalContainer) {
             createTerminalDOM();
         }
-        
+
         if (terminalContainer.classList.contains('minimized')) {
             terminalContainer.classList.remove('minimized');
         }
-        
+
         terminalContainer.classList.add('active');
         if (window.imaginalOS.bringToFront) {
             window.imaginalOS.bringToFront(terminalContainer);
@@ -640,20 +621,17 @@
         }
         terminalInput.focus();
         playBeepSound(600, 0.08, 'sine');
-        
+
         if (terminalOutput.innerHTML === '') {
             writeOutput(`Welcome to my imaginal website.
 You are using ImaginalOS v${window.imaginalOS.VERSION}-potato.
 Administrator: BMO
 `);
         }
-        
+
         resetHintTimer();
     }
 
-    // Anything that takes over the terminal body (editor, game, screensaver)
-    // has to be torn down when the window goes away, otherwise it keeps
-    // running - and keeps swallowing keystrokes - behind a closed window.
     function closeImmersiveModes() {
         const os = window.imaginalOS;
         if (os.isMatrixActive && os.isMatrixActive()) {
@@ -715,10 +693,9 @@ Administrator: BMO
         terminalInput.focus();
     }
 
-    // Backtick opens/closes terminal. Escape key is reserved for inside console control.
     window.addEventListener('keydown', (e) => {
         const isTerminalOpen = terminalContainer && terminalContainer.classList.contains('active') && !terminalContainer.classList.contains('minimized');
-        
+
         if (e.key === '`') {
             e.preventDefault();
             toggleTerminal();
@@ -740,7 +717,6 @@ Administrator: BMO
         }
     });
 
-    // Expose on global namespace
     window.imaginalOS.writeOutput = writeOutput;
     window.imaginalOS.getPromptString = getPromptString;
     window.imaginalOS.wrapEmoji = wrapEmoji;
