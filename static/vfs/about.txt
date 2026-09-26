@@ -15,8 +15,3 @@ We really hope you find all the quirks, jokes, and Easter eggs scattered around 
 as fun as we found coding them.
 
 BR BMO
-
-Commands to explore next:
-• Type 'cat dossier.txt'  to read Maksim's full dossier
-• Type 'cd projects'      to explore project repositories
-• Type 'cat contact.txt'  to get our coordinates

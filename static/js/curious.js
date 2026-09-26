@@ -66,7 +66,8 @@
         return [
             { name: 'Imaginal', path: '/home/bmo/projects/imaginal.txt', fileName: 'imaginal.txt' },
             { name: 'Cashflow 360', path: '/home/bmo/projects/cashflow_360.txt', fileName: 'cashflow_360.txt' },
-            { name: 'Drills', path: '/home/bmo/projects/drills.txt', fileName: 'drills.txt' }
+            { name: 'Drills', path: '/home/bmo/projects/drills.txt', fileName: 'drills.txt' },
+            { name: 'Inner Light', path: '/home/bmo/projects/inner_light.txt', fileName: 'inner_light.txt' }
         ];
     }
 

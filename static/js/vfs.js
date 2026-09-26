@@ -49,6 +49,11 @@
                                         'type': 'file',
                                         'readonly': true,
                                         'contentPath': 'static/vfs/projects/drills.txt'
+                                    },
+                                    'inner_light.txt': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'contentPath': 'static/vfs/projects/inner_light.txt'
                                     }
                                 }
                             },

@@ -11,7 +11,7 @@ Languages:   PHP 8+ (Laravel), Python 3+ (Django), Go, JavaScript, SQL, Bash
 DevOps/IaC:  Docker, Kubernetes, GitHub Actions (CI/CD), Ansible
 Databases:   PostgreSQL, ClickHouse, Redis
 Monitoring:  Grafana, Sentry
-OS/Systems:  Linux (I use Fedora Atomic btw) 
+OS/Systems:  Linux (I use Fedora Atomic BTW) 
 
 [ EXPERIENCE HISTORY ]
 * Backend Developer (Dec 2025 - Present) 
