@@ -54,6 +54,11 @@
                                         'type': 'file',
                                         'readonly': true,
                                         'contentPath': 'static/vfs/projects/inner_light.txt'
+                                    },
+                                    'bentopage.txt': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'contentPath': 'static/vfs/projects/bentopage.txt'
                                     }
                                 }
                             },

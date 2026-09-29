@@ -961,7 +961,9 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
 }
 
 .curious-btn-mark {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Courier New', Courier, monospace;
   font-size: 16px;
   font-weight: bold;
@@ -970,6 +972,12 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
   text-shadow: 0 0 4px #00ff80;
   flex-shrink: 0;
   pointer-events: none;
+}
+
+.curious-btn-mark svg {
+  display: block;
+  stroke: #00ff80;
+  filter: drop-shadow(0 0 3px rgba(0, 255, 128, 0.7));
 }
 
 .curious-close-btn {
@@ -1002,6 +1010,39 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
   max-width: 160px;
   opacity: 1;
   margin-right: 1px;
+}
+
+/* Mobile mode overrides for hover & layout */
+.curious-widget.mobile-mode:not(.open):hover {
+  width: 48px;
+  box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+  border-color: rgba(0, 255, 128, 0.7);
+}
+
+.curious-widget.mobile-mode:not(.open):hover .curious-btn-text {
+  max-width: 0;
+  opacity: 0;
+  margin-right: 0;
+}
+
+.curious-widget.mobile-mode .curious-header-content {
+  flex-direction: row-reverse;
+  gap: 0;
+}
+
+.curious-widget.mobile-mode .curious-btn-text {
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  margin-right: 0;
+}
+
+.curious-widget.mobile-mode.open .curious-header-content {
+  gap: 8px;
+}
+
+.curious-widget.mobile-mode.open .curious-btn-text {
+  max-width: 170px;
+  opacity: 1;
 }
 
 /* OPEN UNIFIED BLOCK */
@@ -1133,7 +1174,7 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
 }
 
 /* RESPONSIVE */
-@media (max-width: 520px) {
+@media (max-width: 768px) {
   .curious-widget {
     top: 14px;
     right: 14px;
@@ -1145,10 +1186,11 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
   .curious-widget:not(.open):hover,
   .curious-widget.open {
     width: calc(100vw - 28px);
-    max-width: 250px;
+    max-width: 260px;
   }
   .curious-header {
     height: 44px;
+    padding: 0 12px;
   }
 }
 

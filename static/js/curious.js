@@ -39,6 +39,7 @@
     }
 
     function formatDisplayName(filename) {
+        if (filename === 'bentopage.txt' || filename === 'bentopage') return 'BentoPage';
         const base = filename.replace(/\.[^.]+$/, '');
         return base
             .split('_')
@@ -67,7 +68,8 @@
             { name: 'Imaginal', path: '/home/bmo/projects/imaginal.txt', fileName: 'imaginal.txt' },
             { name: 'Cashflow 360', path: '/home/bmo/projects/cashflow_360.txt', fileName: 'cashflow_360.txt' },
             { name: 'Drills', path: '/home/bmo/projects/drills.txt', fileName: 'drills.txt' },
-            { name: 'Inner Light', path: '/home/bmo/projects/inner_light.txt', fileName: 'inner_light.txt' }
+            { name: 'Inner Light', path: '/home/bmo/projects/inner_light.txt', fileName: 'inner_light.txt' },
+            { name: 'BentoPage', path: '/home/bmo/projects/bentopage.txt', fileName: 'bentopage.txt' }
         ];
     }
 
@@ -495,6 +497,41 @@
         });
     }
 
+    const PHONE_ICON_SVG = '<svg class="curious-phone-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>';
+
+    function isMobile() {
+        return window.matchMedia('(max-width: 768px)').matches ||
+               ('ontouchstart' in window && window.innerWidth <= 1024) ||
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    function updateWidgetMode() {
+        if (!curiousWidget) return;
+        const mobile = isMobile();
+        const btnText = curiousWidget.querySelector('.curious-btn-text');
+        const btnMark = curiousWidget.querySelector('.curious-btn-mark');
+        const header = curiousWidget.querySelector('.curious-header');
+
+        if (mobile) {
+            curiousWidget.classList.add('mobile-mode');
+            if (btnText) btnText.textContent = 'Imaginal Mobile';
+            if (btnMark) btnMark.innerHTML = PHONE_ICON_SVG;
+            if (header) {
+                header.setAttribute('aria-label', 'Imaginal Mobile');
+                header.setAttribute('title', 'Imaginal Mobile');
+            }
+            revealButton(true);
+        } else {
+            curiousWidget.classList.remove('mobile-mode');
+            if (btnText) btnText.textContent = 'Not so curious';
+            if (btnMark) btnMark.textContent = '?';
+            if (header) {
+                header.setAttribute('aria-label', 'Not so curious?');
+                header.setAttribute('title', 'Not so curious?');
+            }
+        }
+    }
+
     function createCuriousDOM() {
         if (curiousWidget) return;
 
@@ -555,6 +592,12 @@
             }
         });
 
+        document.addEventListener('click', (e) => {
+            if (isMenuOpen && curiousWidget && !curiousWidget.contains(e.target)) {
+                closeMenu();
+            }
+        });
+
         menuListContainer.addEventListener('click', async (e) => {
             const item = e.target.closest('.curious-item');
             if (!item) return;
@@ -562,9 +605,14 @@
             const path = item.getAttribute('data-path');
             if (path) {
                 e.stopPropagation();
+                if (isMobile()) {
+                    closeMenu();
+                }
                 await showDocumentViewer(path);
             }
         });
+
+        updateWidgetMode();
     }
 
     function revealButton(immediate = false) {
@@ -677,7 +725,6 @@
     });
 
     function initCurious() {
-
         try {
             const nav = window.performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
             if (nav && nav.type === 'reload') {
@@ -686,17 +733,24 @@
         } catch {}
 
         createCuriousDOM();
+        updateWidgetMode();
 
-        let alreadyRevealed = false;
-        try {
-            alreadyRevealed = sessionStorage.getItem('curious_btn_revealed') === '1';
-        } catch {}
+        window.addEventListener('resize', updateWidgetMode);
 
-        if (alreadyRevealed) {
+        if (isMobile()) {
             revealButton(true);
         } else {
-            window.addEventListener('mousemove', onMouseMove, { passive: true });
-            window.addEventListener('touchmove', onTouchMove, { passive: true });
+            let alreadyRevealed = false;
+            try {
+                alreadyRevealed = sessionStorage.getItem('curious_btn_revealed') === '1';
+            } catch {}
+
+            if (alreadyRevealed) {
+                revealButton(true);
+            } else {
+                window.addEventListener('mousemove', onMouseMove, { passive: true });
+                window.addEventListener('touchmove', onTouchMove, { passive: true });
+            }
         }
     }
 
