@@ -16,15 +16,15 @@ builders, heavy CMS systems, and complex template engines on the market,
 the vast majority of everyday professionals don't actually need an
 overcomplicated website. For a hardworking specialist, electrician,
 massage therapist, or local craftsperson, all that's required is a
-clean, reliable way to showcase essential details — services, pricing,
-credentials, and contacts — without having to worry about hosting upkeep,
+clean, reliable way to showcase essential details - services, pricing,
+credentials, and contacts - without having to worry about hosting upkeep,
 plugin updates, or security patches.
 
 The core philosophy is simplicity and speed: provide your information,
 transfer payment, and receive a finished, high-performance website.
 No ongoing hidden fees, no recurring surprise charges, and absolutely
 no competitor ads pushed onto your own domain. Beyond that, it serves
-as an effortless digital business card — instantly shareable,
+as an effortless digital business card - instantly shareable,
 lightweight, and purpose-built for modern mobile and desktop screens
 alike.
 

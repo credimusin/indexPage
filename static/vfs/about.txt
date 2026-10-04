@@ -3,7 +3,7 @@
 Welcome, traveler! You have arrived in my personal corner of cyberspace.
 
 This website is an interactive retro-futuristic space and developer
-portfolio — a place where I showcase my engineering work, share a glimpse
+portfolio - a place where I showcase my engineering work, share a glimpse
 into who I am, and provide direct channels to get in touch.
 
 [ THE VIBE & SPIRIT ]
@@ -18,7 +18,7 @@ While the interface doesn't take itself too seriously, the engineering
 behind it is genuine. Built from the ground up without heavy frameworks,
 this project is a live demonstration of my technical depth, dedication, and
 attention to detail. It was designed with a clear understanding of the stack
-and a relentless passion for technology and continuous growth — showing how
+and a relentless passion for technology and continuous growth - showing how
 I approach software: clean, thoughtful, resilient, and crafted with care.
 
 [ SYSTEM NAVIGATION ]
@@ -42,4 +42,5 @@ Ready to navigate? Here is your flight plan:
 
 Enjoy your stay in ImaginalOS, and remember: curiosity is always rewarded!
 
-— Maksim B. (BMO)
+
+BR Maksim B. (BMO)

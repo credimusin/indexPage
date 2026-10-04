@@ -27,7 +27,7 @@ OS/Systems:  Linux (I use Fedora Sway Atomic BTW)
   Workstations with 256 MB RAM? Squeezed. Arcane undocumented codebase?
   Give me a terminal, a hot mug of tea, and some time.
 * Terminal Curiosity: I genuinely enjoy knowing how things tick under the
-  hood — from high-level Laravel controllers down to CPU branch prediction.
+  hood - from high-level Laravel controllers down to CPU branch prediction.
 
 [ EXPERIENCE HISTORY ]
 * Backend Developer & Systems Engineer (Dec 2025 - Present)

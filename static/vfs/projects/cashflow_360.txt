@@ -11,7 +11,7 @@ interface.
 
 History & Evolution:
 - July 2020 (CRP):
-  The project began as a budget-tracking tool for an IT department —
+  The project began as a budget-tracking tool for an IT department -
   a direct replacement for Excel spreadsheets, complete with forms,
   statistics, and a nice visual layout. At the time, it was called CRP.
   I don't remember the exact acronym anymore, but it was something
@@ -25,7 +25,7 @@ History & Evolution:
   massive CRMs are just intimidating. That's how "Payment Register" was
   born in August 2023 (source code: https://github.com/credimusin/Payment-Register).
   I worked on it for about a year, but it ended due to personnel changes
-  again — though this time, they weren't mine. A complex workflow slowed
+  again - though this time, they weren't mine. A complex workflow slowed
   down adoption, and the business's resistance to new ideas meant the
   project couldn't be fully utilized or developed further. So,
   development came to a halt.
@@ -37,7 +37,7 @@ History & Evolution:
   to keep growing as a programmer. I collaborated with a designer to
   create the interface. I tried running some targeted ads and marketing
   to attract traffic, but ultimately, the tool went unnoticed. For a while,
-  I paid for a cheap hosting server — by the way, the entire project ran
+  I paid for a cheap hosting server - by the way, the entire project ran
   on a minimal VPS with just the essentials. But when I discovered PWAs,
   I got the idea to refactor the whole project into a single-page app and
   deploy it on Cloudflare Pages to keep it alive as a showcase of my skills.

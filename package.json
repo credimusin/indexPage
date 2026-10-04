@@ -1,6 +1,6 @@
 {
   "name": "imaginal-dev",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "A retro-futuristic interactive web page",
   "private": true,
   "type": "module",

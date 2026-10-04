@@ -15,7 +15,7 @@ original repository. Later, I experimented with Cloudflare Pages and
 deployed a similar portfolio project using a frontend framework. Over
 time, I grew dissatisfied with it, took it down, hid the repository,
 and left a simple placeholder page. Recently, I felt the urge to build
-something more than just a placeholder — something that looks simple on
+something more than just a placeholder - something that looks simple on
 the surface but hides a wealth of interesting, fun, and engaging
 features underneath.
 
