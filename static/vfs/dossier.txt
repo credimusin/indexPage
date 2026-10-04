@@ -1,38 +1,123 @@
 ================ BMO DOSSIER / CV ================
 
-Name: Maksim B (BMO)
-Role: Backend Developer & Infrastructure Architect
-Status: A real living boy (highly optimized, Math major)
-Core Focus: Engineering clean backend logic, orchestrating
-highly available databases, and deploying infrastructure-as-code (IaC).
+Name:        Maksim B (BMO)
+Role:        Backend Developer & Infrastructure Architect
+Status:      A real living boy (highly optimized, Math major)
+Core Focus:  Writing bulletproof backend logic, taming wild databases,
+             and automating everything that moves (or doesn't move).
 
 [ TECHNICAL ARMAMENT ]
-Languages:   PHP 8+ (Laravel), Python 3+ (Django), Go, JavaScript, SQL, Bash
-DevOps/IaC:  Docker, Kubernetes, GitHub Actions (CI/CD), Ansible
-Databases:   PostgreSQL, ClickHouse, Redis
-Monitoring:  Grafana, Sentry
-OS/Systems:  Linux (I use Fedora Atomic BTW) 
+Languages:   PHP 8+ (Laravel), Python 3+, Zig, HTML/CSS/JS, SQL, Bash
+DevOps/IaC:  Docker (Podman), Kubernetes, OpenTofu / Terraform, CI/CD, Ansible
+Databases:   PostgreSQL (EXPLAIN, partitioning), ClickHouse, Redis, SQLite
+Monitoring:  Grafana, Sentry, Zabbix
+OS/Systems:  Linux (I use Fedora Sway Atomic BTW)
+
+[ THE HUMAN FACTOR & SOFT SKILLS ]
+* No-Jargon Communication: Having worked in support, sales, and management,
+  I speak fluent "Human" and fluent "Kernel". I explain complex tech without
+  alienating stakeholders, and translate business ideas into sane specs.
+* Leadership & Empathy: From herding first-graders in camp to leading shift
+  crews and Service Desk engineers, I know how to keep teams calm, motivated,
+  and unblocked when production is on fire.
+* Healthy Laziness (Automation Reflex): If I have to do something manually
+  twice, I get itchy. If three times, I write a script or build a pipeline.
+  Life is too short for repetitive clicking.
+* Zero Fear of Legacy / Adaptability: Thrown into a new city? Rebooted.
+  Workstations with 256 MB RAM? Squeezed. Arcane undocumented codebase?
+  Give me a terminal, a hot mug of tea, and some time.
+* Terminal Curiosity: I genuinely enjoy knowing how things tick under the
+  hood — from high-level Laravel controllers down to CPU branch prediction.
 
 [ EXPERIENCE HISTORY ]
-* Backend Developer (Dec 2025 - Present) 
-  Designing server-side logic for B2B web applications using PHP 8 & Laravel.
-  Optimizing complex PostgreSQL queries (EXPLAIN plans, indexes, partitioning).
-  Covering codebase with robust PHPUnit tests. Alongside coding, designing
-  resilient project architecture, IaC deployments, and CI/CD pipelines.
-* Deputy Head of Service Desk & Sysadmin (Aug 2020 - Dec 2025) 
-  Managed support engineers, automated Jira integrations & data pipelines
-  with Python (REST API).
-  Administered Linux servers, MDM configurations, and automated workstations.
-* Infrastructure Support Engineer (Nov 2016 - Aug 2020) 
-  Designed failover architectures for web servers (load balancing, database
-  redundancy). Configured Zabbix monitoring and automated business processes.
-* Early Career & Operations (2012 - 2016)
-  Sysadmin maintaining Linux/Windows nodes, VPNs, and AD.
-  Support shift lead utilizing Python automations.
+* Backend Developer & Systems Engineer (Dec 2025 - Present)
+  - Full-time PHP 8 & Laravel craftsmanship. Designing clean server logic,
+    crafting rock-solid migrations, and writing PHPUnit tests so we sleep well.
+  - Analytics on Turbos: Migrated our heaviest monster reports to ClickHouse,
+    speeding up dashboard queries by over 10x (no more coffee breaks waiting
+    for dashboards to load).
+  - Forked & tuned a popular open-source Laravel auditing library to survive
+    high-throughput event logging across our internal microservices.
+  - Wrangling PostgreSQL with EXPLAIN ANALYZE, smart indexes, and partitioning.
+    Tuning Redis caches, Docker/Podman containers, and CI/CD pipelines.
+  - Evening rabbit hole: Deep-diving into CS:APP, x86-64 assembly, and writing
+    low-level code in Zig because computer architecture is fascinating.
+  - Side mission: Guiding IT infrastructure and architecture for an
+    online school.
+
+* Deputy Head of Service Desk & PM / Sysadmin (Aug 2020 - Dec 2025)
+  - Started as an on-duty admin handing out permissions and fixing laptops.
+    Scale was massive, so I automated my way out of routine: wrote Python and
+    Bash tools for bulk AD user operations, renames, and zero-touch setups.
+  - Plugged Jira REST APIs into workflows to auto-dispatch tickets and track
+    support metrics automatically instead of manually tallying spreadsheets.
+  - Gradually took over team lead & PM duties: ran sprint planning, managed the
+    support roster, and shielded my team from chaos.
+  - Realized I loved building systems more than managing tickets. Transitioned
+    to core dev under senior engineer mentorship, successfully reinventing
+    myself as a backend developer.
+
+* Infrastructure Support Engineer (Nov 2016 - Aug 2020)
+  - Solo turnkey IT for a well-known psychologist's multi-business empire:
+    hotel, restaurant, lecture hall, web studio, printing house, and salon.
+  - Greenfield launches: Physically ran cables, set up POS tills, installed
+    printing press workstations, and got the hotel, restaurant, and printing
+    house online right in time for their opening days.
+  - Solved quirky engineering puzzles: built a network broadcast streaming
+    system over local LAN so hotel TVs could play scheduled video channels.
+  - Configured Zabbix monitoring, managed vendor hardware procurement, and kept
+    the diverse network running smoothly.
+  - Best production deploy ever: Met my future wife here. 10/10 job, would
+    do again.
+
+* Tech Support Shift Lead & Operations (2014 - 2016)
+  - Moved to a new city with a clean slate. Started on Tier 0-2 tech support
+    at a busy call center, answering calls and diagnosing weird user issues.
+  - Promoted to shift lead: managed up to 10 operators, kept queues under
+    control, and mediated tough escalations with a cool head.
+  - Built Python scripts to auto-dump and sync incoming tickets directly into
+    CRMs, rescuing the team from soul-crushing copy-paste routine.
+
+* Enterprise Sysadmin (2011 - 2014)
+  - Returned to the municipal utility enterprise from my student internship
+    to replace a predecessor who... had an unfortunate fallout with alcohol :D
+  - Stepped into peak retro territory: the entire enterprise's internet was a
+    single DSL modem on the Director's desk used solely for outbound email;
+    workstations ran offline on LAN and synced databases in batches over DSL.
+  - Squeezed blood from stones: tuned ancient PCs with only 128 MB RAM,
+    stripping Windows down to the bare bones so staff could run documents and
+    accounting software without the machines seizing up.
+  - Kept municipal servers, backups, and local networks humming along for
+    years on essentially zero hardware budget.
+
+* Operations & Agent Supervisor (2009 - 2011)
+  - First post-uni gig with my fresh math degree at an insurance company.
+  - Trained, supervised, and mentored insurance agents; crunched numbers,
+    handled regulatory reports, and learned how to negotiate under pressure.
+
+* Computer Club Admin & Hardware Tech (~2005 - 2007)
+  - College survival job: Jack-of-all-trades at an internet & gaming center
+    (operator, cashier, hardware tech, nighttime bouncer-admin).
+  - Managed a 100-PC network: replaced thermal paste, patched frayed cables,
+    reinstalled Windows after chaotic gamers, and learned real sysadmin triage.
+
+* Camp Counselor & Accidental DJ (Summer 2004)
+  - First official job in my labor record at the end of freshman year.
+  - Hired as camp DJ (because "he knows computers"), but ended up reassigned
+    as a counselor for the youngest pioneer squad.
+  - Heading to lunch looked like a human comet: kids clinging to both arms,
+    climbing my shoulders, with a chaotic cheerful tail following behind.
+    Best school of patience, genuine empathy, and crowd control in existence.
 
 [ EDUCATION & ROOTS ]
-- B.S. in Mathematics, Dahl East Ukrainian National University (2004 - 2009)
+- B.S. in Mathematics, Dahl EUNU (2004 - 2009)
 - Mentorship & Computer Science Deep-Dive (Cadolabs / DevDairy, 2025 - 2026)
+
+[ PET PROJECTS & SIDE QUESTS ]
+- I can't stop building things. I actively maintain multiple pet projects
+  spanning web apps, developer tools, and terminal spaces.
+- Want to inspect architecture notes or live builds?
+  -> Check 'projects/'.
 
 [ VULNERABILITIES & COGNITIVE FLUIDS ]
 - Addicted to warm cookies (chocolate chip preferred).
