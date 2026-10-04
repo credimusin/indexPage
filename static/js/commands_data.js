@@ -98,7 +98,8 @@
         "Type 'history' to review all the typos you've made during this session.",
         "If BMO is quiet, it means he is calculating the coordinates of the next warm cookie.",
         "You can open external links instantly, e.g., type 'open https://github.com'.",
-        "Stuck in your coding career? Type 'tips' for highly constructive advice."
+        "Stuck in your coding career? Type 'tips' for highly constructive advice.",
+        "Need a laugh? Explore developer memes and artwork: try 'cd fun' and 'ls'!"
     ];
 
     const MAN_PAGES = {

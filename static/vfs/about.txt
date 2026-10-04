@@ -1,17 +1,45 @@
 === ABOUT THIS PROJECT ===
 
-Welcome, curious User! 
+Welcome, traveler! You have arrived in my personal corner of cyberspace.
 
-First things first: ImaginalOS is created purely for fun, nostalgia, and coding amusement.
-BMO promises that all those scary telemetry scans and "security breaches" are just playful simulations — we do not steal your data or harvest your soul.
-Your privacy and biological chassis are completely safe here!
+This website is an interactive retro-futuristic space and developer
+portfolio — a place where I showcase my engineering work, share a glimpse
+into who I am, and provide direct channels to get in touch.
 
-Most of the features and hidden secrets on this website are designed for slightly more
-advanced users who enjoy typing commands instead of clicking buttons.
-If you actually managed to navigate here, type 'cat about.txt', and are reading these exact
-words — you are officially a certified genius and a wonderful human! 
+[ THE VIBE & SPIRIT ]
+The entire environment is crafted with a playful, nostalgic terminal
+charm, seasoned with tongue-in-cheek humor, interactive quirks, and hidden
+Easter eggs. If you're the kind of curious mind who enjoys looking under
+the hood, poking at configuration files, and testing unexpected commands,
+there is plenty here for you to uncover.
 
-We really hope you find all the quirks, jokes, and Easter eggs scattered around this terminal
-as fun as we found coding them.
+[ CRAFTSMANSHIP & PASSION ]
+While the interface doesn't take itself too seriously, the engineering
+behind it is genuine. Built from the ground up without heavy frameworks,
+this project is a live demonstration of my technical depth, dedication, and
+attention to detail. It was designed with a clear understanding of the stack
+and a relentless passion for technology and continuous growth — showing how
+I approach software: clean, thoughtful, resilient, and crafted with care.
 
-BR BMO
+[ SYSTEM NAVIGATION ]
+Ready to navigate? Here is your flight plan:
+
+* Dossier (About Me):
+  Curious about my background, battle-tested skills, and technical stack?
+  -> Check 'dossier.txt' (or run: cat dossier.txt)
+
+* Projects:
+  Want to see what I build and how I solve real-world problems?
+  -> Explore the 'projects/' directory (or run: cd projects && ls)
+
+* Draft Rates (How I Can Help):
+  Looking for engineering muscle, architecture consulting, or infrastructure care?
+  -> Check 'draft_rates.cfg' (or run: cat draft_rates.cfg)
+
+* Contacts:
+  Want to discuss an idea, collaborate, or simply say hello?
+  -> View 'contact.txt' (or run: cat contact.txt)
+
+Enjoy your stay in ImaginalOS, and remember: curiosity is always rewarded!
+
+— Maksim B. (BMO)

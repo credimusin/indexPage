@@ -298,7 +298,8 @@ div.main {
   line-height: 1.45;
   color: #a8b2d1;
   white-space: pre-wrap;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .terminal-output::-webkit-scrollbar {
@@ -1206,7 +1207,8 @@ body:has(#terminal-window.active:not(.minimized)) #doc-viewer-window {
 
 .doc-viewer-content {
   margin-bottom: 0 !important;
-  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
   user-select: text;
 }
 

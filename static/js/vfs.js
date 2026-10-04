@@ -110,6 +110,46 @@
                                         'type': 'file',
                                         'readonly': true,
                                         'content': 'IMAGE:static/images/fun/git_force.jpg'
+                                    },
+                                    'cookie_policy.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/cookie_policy.jpg'
+                                    },
+                                    'dark_mode_bugs.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/dark_mode_bugs.jpg'
+                                    },
+                                    'http_418_teapot.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/http_418_teapot.jpg'
+                                    },
+                                    'sudo_sandwich.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/sudo_sandwich.jpg'
+                                    },
+                                    'table_lock_dinner.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/table_lock_dinner.jpg'
+                                    },
+                                    'udp_joke.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/udp_joke.jpg'
+                                    },
+                                    'rubber_duck_debugging.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/rubber_duck_debugging.jpg'
+                                    },
+                                    '12_loaves_of_bread.jpg': {
+                                        'type': 'file',
+                                        'readonly': true,
+                                        'content': 'IMAGE:static/images/fun/12_loaves_of_bread.jpg'
                                     }
                                 }
                             },

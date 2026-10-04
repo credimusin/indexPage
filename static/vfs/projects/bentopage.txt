@@ -1,21 +1,50 @@
 [Project: BentoPage]
-Website: https://bentopage.ru/
+Title:    BentoPage
+Website:  https://bentopage.ru/
+Platform: Web
 
 Description:
-A streamlined Bento-grid website service and generator designed for specialists, craftspeople, and small businesses who need a clean, maintenance-free web presence without the bloat of complex CMS platforms.
+A streamlined Bento-grid website service and generator designed for
+specialists, craftspeople, and small businesses who need a clean,
+maintenance-free web presence without the bloat of complex CMS
+platforms.
 
 History & Evolution:
-This is a quintessential pet project born out of bringing a practical idea into reality. While there is no shortage of turnkey website builders, heavy CMS systems, and complex template engines on the market, the vast majority of everyday professionals don't actually need an overcomplicated website. For a hardworking specialist, electrician, massage therapist, or local craftsperson, all that's required is a clean, reliable way to showcase essential details—services, pricing, credentials, and contacts—without having to worry about hosting upkeep, plugin updates, or security patches.
+This is a quintessential pet project born out of bringing a practical
+idea into reality. While there is no shortage of turnkey website
+builders, heavy CMS systems, and complex template engines on the market,
+the vast majority of everyday professionals don't actually need an
+overcomplicated website. For a hardworking specialist, electrician,
+massage therapist, or local craftsperson, all that's required is a
+clean, reliable way to showcase essential details — services, pricing,
+credentials, and contacts — without having to worry about hosting upkeep,
+plugin updates, or security patches.
 
-The core philosophy is simplicity and speed: provide your information, transfer payment, and receive a finished, high-performance website. No ongoing hidden fees, no recurring surprise charges, and absolutely no competitor ads pushed onto your own domain. Beyond that, it serves as an effortless digital business card—instantly shareable, lightweight, and purpose-built for modern mobile and desktop screens alike.
+The core philosophy is simplicity and speed: provide your information,
+transfer payment, and receive a finished, high-performance website.
+No ongoing hidden fees, no recurring surprise charges, and absolutely
+no competitor ads pushed onto your own domain. Beyond that, it serves
+as an effortless digital business card — instantly shareable,
+lightweight, and purpose-built for modern mobile and desktop screens
+alike.
 
 Technical Features:
-- Zero-Build Client Architecture: The production frontend requires zero server-side builds or compilation, serving pre-optimized vanilla JavaScript and utility CSS directly with blazing-fast response times.
-- Static Site Generation (SSG): A lightweight custom Node.js generator that produces clean, self-contained client landing sites from modular templates and JSON configs.
-- Interactive Bento Canvas: A responsive live preview system and modular onboarding wizard letting clients configure visual themes, layouts, and services.
-- Telegram Bot Automation: An integrated Node.js Express service handling incoming client requests, notifications, and onboarding intake seamlessly.
+- Zero-Build Client Architecture: The production frontend requires
+  zero server-side builds or compilation, serving pre-optimized
+  vanilla JavaScript and utility CSS directly with blazing-fast
+  response times.
+- Static Site Generation (SSG): A lightweight custom Node.js generator
+  that produces clean, self-contained client landing sites from
+  modular templates and JSON configs.
+- Interactive Bento Canvas: A responsive live preview system and
+  modular onboarding wizard letting clients configure visual themes,
+  layouts, and services.
+- Telegram Bot Automation: An integrated Node.js Express service
+  handling incoming client requests, notifications, and onboarding
+  intake seamlessly.
 
 Usage:
-Visit https://bentopage.ru/, explore the interactive demos and Bento layouts, and submit your information to launch your own tailored web page.
+Visit https://bentopage.ru/, explore the interactive demos and Bento
+layouts, and submit your information to launch your own tailored web page.
 
 Tech stack: Vanilla JavaScript, Tailwind CSS, Node.js

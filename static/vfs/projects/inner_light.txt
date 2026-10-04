@@ -1,24 +1,63 @@
 [Project: Inner Light]
-Website: https://innerlight.imaginal.dev/
+Title:    Inner Light
+Website:  https://innerlight.imaginal.dev/
 Platform: Android (APK)
 
 Description:
-A quiet, distraction-free offline mobile reader for sacred texts, world philosophy, and personal contemplation, complete with a customizable prayer book and a local spiritual journal.
+A quiet, distraction-free offline mobile reader for sacred texts,
+world philosophy, and personal contemplation, complete with a
+customizable prayer book and a local spiritual journal.
 
 History & Evolution:
-It all began right after my 39th birthday—on May 13th, to be exact (time really flies, O_O). I never considered myself a traditionally religious person, but world religions and classical philosophy have always captivated me as profound cultural phenomena and mirrors for exploring one's own inner world. At a certain point in life, you naturally find yourself slowing down and looking inward for balance, clarity, and peace. I didn't want any algorithms, social feeds, ads, cloud logins, or push notifications—I just wanted a quiet, intimate sanctuary on my phone. A portable place to study sacred scriptures, read inspiring wisdom across traditions, and keep private notes without anyone watching.
+It all began right after my 39th birthday — on May 13th, to be exact
+(time really flies, O_O). I never considered myself a traditionally
+religious person, but world religions and classical philosophy have
+always captivated me as profound cultural phenomena and mirrors for
+exploring one's own inner world. At a certain point in life, you
+naturally find yourself slowing down and looking inward for balance,
+clarity, and peace. I didn't want any algorithms, social feeds, ads,
+cloud logins, or push notifications — I just wanted a quiet, intimate
+sanctuary on my phone. A portable place to study sacred scriptures,
+read inspiring wisdom across traditions, and keep private notes without
+anyone watching.
 
-The earliest prototype was born under the name "Hymns". It started as a humble personal collection of inspiring quotes, prayers, and affirmations. But as development progressed, I realized that texts from different world traditions—Christianity, Islam, Buddhism, Hinduism, and Stoic philosophy—deserve deep reverence and careful separation, rather than being jumbled together. That led to the core design of Inner Light: an onboarding step where everyone chooses their own tradition and personal path, whether through a single doctrine, comparative reflection, or quiet daily meditation.
+The earliest prototype was born under the name "Hymns". It started as
+a humble personal collection of inspiring quotes, prayers, and
+affirmations. But as development progressed, I realized that texts from
+different world traditions — Christianity, Islam, Buddhism, Hinduism,
+and Stoic philosophy — deserve deep reverence and careful separation,
+rather than being jumbled together. That led to the core design of
+Inner Light: an onboarding step where everyone chooses their own
+tradition and personal path, whether through a single doctrine,
+comparative reflection, or quiet daily meditation.
 
-Bringing the mobile build to life was an adventure in itself. A funny behind-the-scenes memory: while compiling the release APK with the Android build toolchain, my aging laptop hit severe thermal throttling, overheated, and kept crashing mid-build. Determined to finish the release, I literally stood holding the laptop directly under the icy airflow of my room's air conditioner, cooling the chassis like a wind tunnel until the APK compilation finally succeeded! :D
+Bringing the mobile build to life was an adventure in itself. A funny
+behind-the-scenes memory: while compiling the release APK with the
+Android build toolchain, my aging laptop hit severe thermal throttling,
+overheated, and kept crashing mid-build. Determined to finish the
+release, I literally stood holding the laptop directly under the icy
+airflow of my room's air conditioner, cooling the chassis like a wind
+tunnel until the APK compilation finally succeeded! :D
 
 Technical Features:
-- Comprehensive Scripture Library: Full Old and New Testaments in the Russian Synodal translation, the Holy Quran and 40 Hadiths, Buddhist sutras (Dhammapada, Heart Sutra, Diamond Sutra), Hindu scriptures (Bhagavad Gita, Yoga Sutras, Upanishads), and Stoic/spiritual philosophy (Marcus Aurelius, Lao Tzu, Kahlil Gibran).
-- Customizable Prayer Book & Practices: Daily morning and evening prayers, duas, mantras, and affirmations, with the ability to add, edit, and organize your own custom texts.
-- Private Local Journal: A built-in reflective diary stored strictly on-device in a local SQLite database—zero cloud sync, zero telemetry, and zero tracking.
-- 100% Offline & Independent: Everything runs completely offline with no internet access required, distributed directly as standalone APK releases signed with my personal GPG key.
+- Comprehensive Scripture Library: Full Old and New Testaments in the
+  Russian Synodal translation, the Holy Quran and 40 Hadiths, Buddhist
+  sutras (Dhammapada, Heart Sutra, Diamond Sutra), Hindu scriptures
+  (Bhagavad Gita, Yoga Sutras, Upanishads), and Stoic/spiritual
+  philosophy (Marcus Aurelius, Lao Tzu, Kahlil Gibran).
+- Customizable Prayer Book & Practices: Daily morning and evening
+  prayers, duas, mantras, and affirmations, with the ability to add,
+  edit, and organize your own custom texts.
+- Private Local Journal: A built-in reflective diary stored strictly
+  on-device in a local SQLite database — zero cloud sync, zero
+  telemetry, and zero tracking.
+- 100% Offline & Independent: Everything runs completely offline with
+  no internet access required, distributed directly as standalone
+  APK releases signed with my personal GPG key.
 
 Usage:
-Download the standalone APK from the website, install it on your Android phone, and carry a quiet library of wisdom in your pocket.
+Download the standalone APK from the website, install it on your
+Android phone, and carry a quiet library of wisdom in your pocket.
 
-Tech stack: React Native, Expo, SQLite (expo-sqlite), Tailwind CSS (NativeWind v4), Android SDK.
+Tech stack: React Native, Expo, SQLite (expo-sqlite), Tailwind CSS
+(NativeWind v4), Android SDK.
