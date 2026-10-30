@@ -1,4 +1,4 @@
-# BMO // imaginal.dev
+# BMO // namvera.pages.dev/
 
 A retro-futuristic interactive web page.
 
