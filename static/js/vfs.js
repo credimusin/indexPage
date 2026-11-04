@@ -54,11 +54,6 @@
                                         'type': 'file',
                                         'readonly': true,
                                         'contentPath': 'static/vfs/projects/inner_light.txt'
-                                    },
-                                    'bentopage.txt': {
-                                        'type': 'file',
-                                        'readonly': true,
-                                        'contentPath': 'static/vfs/projects/bentopage.txt'
                                     }
                                 }
                             },
@@ -212,7 +207,8 @@
 
         try {
             const response = await fetch(node.contentPath);
-            if (!response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            if (!response.ok || (contentType.includes('text/html') && !node.contentPath.endsWith('.html'))) {
                 node.content = `[Error: Failed to load ${node.contentPath}]`;
                 return node.content;
             }
@@ -233,6 +229,14 @@
         if (!hasChildren(node)) {
             node.children = {};
             changed = true;
+        }
+        if (defaults.readonly) {
+            for (const key of Object.keys(node.children)) {
+                if (defaults.children[key] === undefined) {
+                    delete node.children[key];
+                    changed = true;
+                }
+            }
         }
         for (const [key, defaultChild] of Object.entries(defaults.children)) {
             if (node.children[key] === undefined) {

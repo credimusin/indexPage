@@ -39,7 +39,6 @@
     }
 
     function formatDisplayName(filename) {
-        if (filename === 'bentopage.txt' || filename === 'bentopage') return 'BentoPage';
         const base = filename.replace(/\.[^.]+$/, '');
         return base
             .split('_')
@@ -68,8 +67,7 @@
             { name: 'Imaginal', path: '/home/bmo/projects/imaginal.txt', fileName: 'imaginal.txt' },
             { name: 'Cashflow 360', path: '/home/bmo/projects/cashflow_360.txt', fileName: 'cashflow_360.txt' },
             { name: 'Drills', path: '/home/bmo/projects/drills.txt', fileName: 'drills.txt' },
-            { name: 'Inner Light', path: '/home/bmo/projects/inner_light.txt', fileName: 'inner_light.txt' },
-            { name: 'BentoPage', path: '/home/bmo/projects/bentopage.txt', fileName: 'bentopage.txt' }
+            { name: 'Inner Light', path: '/home/bmo/projects/inner_light.txt', fileName: 'inner_light.txt' }
         ];
     }
 
@@ -214,7 +212,10 @@
         const contentPath = 'static/vfs/' + filePath.replace(/^\/?home\/bmo\//, '');
         try {
             const response = await fetch('/' + contentPath);
-            if (response.ok) return await response.text();
+            const contentType = response.headers.get('content-type') || '';
+            if (response.ok && (!contentType.includes('text/html') || contentPath.endsWith('.html'))) {
+                return await response.text();
+            }
         } catch {}
         return '[Error: Could not load document content]';
     }
