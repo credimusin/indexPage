@@ -2,8 +2,8 @@
  * imaginalOS - Telemetry Forensics Harvester Module
  */
 (function() {
-    const FALLBACK_LAT = 59.9386;
-    const FALLBACK_LON = 30.3141;
+    const FALLBACK_LAT = -48.8767;
+    const FALLBACK_LON = -123.3933;
 
     const WEATHER_CODE_MAP = [
         { max: 0, type: 'clear', text: 'Clear sky' },
@@ -31,12 +31,12 @@
 
     window.telemetryData = {
         ip: 'Scanning...',
-        city: 'Saint Petersburg (Fallback)',
-        country: 'Russia',
+        city: 'Point Nemo (Orbital Relay)',
+        country: 'International Waters',
         isp: 'Local Loopback ISP',
         lat: FALLBACK_LAT,
         lon: FALLBACK_LON,
-        timezone: 'Europe/Moscow',
+        timezone: 'UTC',
         weatherCode: 0,
         weatherText: 'Clear sky',
         temperature: '0°C',
@@ -108,9 +108,9 @@
             tctx.fillStyle = "#27ae60";
             tctx.fillRect(80, 2, 45, 12);
             tctx.fillStyle = "#e74c3c";
-            tctx.fillText("imaginal.dev_telemetry_scan", 4, 4);
+            tctx.fillText("namvera.pages.dev_telemetry_scan", 4, 4);
             tctx.fillStyle = "rgba(41, 128, 185, 0.6)";
-            tctx.fillText("imaginal.dev_telemetry_scan", 6, 6);
+            tctx.fillText("namvera.pages.dev_telemetry_scan", 6, 6);
 
             const dataUrl = tc.toDataURL();
             let hash = 0;
@@ -306,7 +306,7 @@
             td.country = geo.country || '';
             td.lat = Number.isFinite(geo.latitude) ? geo.latitude : FALLBACK_LAT;
             td.lon = Number.isFinite(geo.longitude) ? geo.longitude : FALLBACK_LON;
-            td.timezone = geo.timezone || 'Europe/Moscow';
+            td.timezone = geo.timezone || 'UTC';
             return;
         }
 

@@ -2,11 +2,11 @@
 // city/country/coordinate at the edge, so there is no reason to hand a visitor
 // address to a third-party lookup API. Nothing leaves the origin here.
 const FALLBACK = {
-  city: "Saint Petersburg",
-  country: "Russia",
-  latitude: 59.9386,
-  longitude: 30.3141,
-  timezone: "Europe/Moscow"
+  city: "Point Nemo (Orbital Relay)",
+  country: "International Waters",
+  latitude: -48.8767,
+  longitude: -123.3933,
+  timezone: "UTC"
 };
 
 const json = (data, headers) =>

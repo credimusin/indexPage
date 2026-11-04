@@ -1,46 +1,50 @@
 === ABOUT THIS PROJECT ===
 
-Welcome, traveler! You have arrived in my personal corner of cyberspace.
+Welcome, traveler! You have somehow stumbled into BMO's pocket dimension.
 
-This website is an interactive retro-futuristic space and developer
-portfolio - a place where I showcase my engineering work, share a glimpse
-into who I am, and provide direct channels to get in touch.
+Let's be honest: 99% of normal humans who land on this page stare at the
+animated sky for four seconds, think "Wait... what is this and why is there
+no 'Buy Now' button?", and slowly back away.
+
+If you are part of the remaining 1% who immediately pressed the backtick
+key (`), opened the console, and started snooping through the directory tree
+- congratulations, you are home.
 
 [ THE VIBE & SPIRIT ]
-The entire environment is crafted with a playful, nostalgic terminal
-charm, seasoned with tongue-in-cheek humor, interactive quirks, and hidden
-Easter eggs. If you're the kind of curious mind who enjoys looking under
-the hood, poking at configuration files, and testing unexpected commands,
-there is plenty here for you to uncover.
+This entire space is an interactive retro-futuristic sandbox and a monument
+to joyful over-engineering. It has no corporate sales funnel, no newsletter
+popups, and no serious business purpose other than existing as a digital
+playground full of synthetic beeps, questionable advice, hidden ciphers,
+and terminal Easter eggs.
 
-[ CRAFTSMANSHIP & PASSION ]
-While the interface doesn't take itself too seriously, the engineering
-behind it is genuine. Built from the ground up without heavy frameworks,
-this project is a live demonstration of my technical depth, dedication, and
-attention to detail. It was designed with a clear understanding of the stack
-and a relentless passion for technology and continuous growth - showing how
-I approach software: clean, thoughtful, resilient, and crafted with care.
+[ CRAFTSMANSHIP & POTATO ENGINEERING ]
+While the resident OS doesn't take itself seriously at all, the machinery
+under the hood is handcrafted with care: zero bloated frontend frameworks,
+zero megabyte-heavy dependency black holes, and 100% free-range vanilla
+JavaScript, CSS variables, and HTML5 Canvas running on two virtual AA
+batteries and a warm chocolate chip cookie.
 
 [ SYSTEM NAVIGATION ]
-Ready to navigate? Here is your flight plan:
+Not sure which button to mash first? Here is your flight plan:
 
-* Dossier (About Me):
-  Curious about my background, battle-tested skills, and technical stack?
+* Dossier (BMO's Classified Lore):
+  Want to read BMO's completely verifiable*, 100% absurd biography and stack?
   -> Check 'dossier.txt' (or run: cat dossier.txt)
 
-* Projects:
-  Want to see what I build and how I solve real-world problems?
+* Projects (The Mad Science Lab):
+  Curious what strange contraptions and side quests live in the archives?
   -> Explore the 'projects/' directory (or run: cd projects && ls)
 
-* Draft Rates (How I Can Help):
-  Looking for engineering muscle, architecture consulting, or infrastructure care?
+* Draft Rates (Mercenary Tariff Card):
+  Need someone to center a <div> or resurrect a server after 'sudo rm -rf /'?
   -> Check 'draft_rates.cfg' (or run: cat draft_rates.cfg)
 
-* Contacts:
-  Want to discuss an idea, collaborate, or simply say hello?
+* Contacts (Subspace Relays):
+  Want to inspect the source repositories or send a signal across the void?
   -> View 'contact.txt' (or run: cat contact.txt)
 
-Enjoy your stay in ImaginalOS, and remember: curiosity is always rewarded!
+Enjoy your stay in ImaginalOS, mash keys responsibly, and remember:
+curiosity is always rewarded!
 
 
-BR Maksim B. (BMO)
+BR, BMO (Resident Console Entity & Good Boy)

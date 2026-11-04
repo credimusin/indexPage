@@ -27,9 +27,6 @@
         if (ref.includes('github.com')) {
             return '🐱';
         }
-        if (ref.includes('t.me') || ref.includes('telegram')) {
-            return '✈️';
-        }
         if (ref.includes('google.') || ref.includes('yandex.') || ref.includes('bing.') || ref.includes('yahoo.')) {
             return '🔍';
         }

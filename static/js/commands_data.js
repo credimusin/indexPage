@@ -35,7 +35,6 @@
         { name: 'rm', args: '&lt;file&gt;', desc: 'Delete files or empty folders.' },
         { name: 'secret', args: '&lt;key&gt;', desc: 'Decrypt cryptographic database lock.' },
         { name: 'sudo', args: '&lt;task&gt;', desc: 'Escalate privileges. Password hint lives in the terminal.' },
-        { name: 'tg', aliases: ['telegram'], desc: 'Open the Telegram channel.' },
         { name: 'time', desc: 'Show local time.' },
         { name: 'tips', desc: 'Get a piece of highly constructive developer advice.' },
         { name: 'touch', args: '&lt;file&gt;', desc: 'Create a file inside virtual environment.' },
@@ -59,7 +58,6 @@
     const HINTS = [
         "Type 'git' to open BMO's GitHub profile.",
         "Type 'gpg' to see the creator's PGP public key.",
-        "Type 'tg' to send BMO a message on Telegram.",
         "Type 'neofetch' to output system specifications.",
         "Type 'harvester' to see telemetry diagnostics.",
         "Try 'cd projects' && 'ls' to explore my works.",
@@ -116,7 +114,7 @@
         curl: {
             desc: "Transfer data from or to a server.",
             linux: "curl is a tool to transfer data from or to a server, using one of the supported protocols (HTTP, HTTPS, FTP, etc.).",
-            project: "Runs a virtual curl request to fetch details from servers. Try 'curl https://imaginal.dev' to get BMO's ANSI art response, 'curl wttr.in' for a weather summary, or 'curl /coffee' for a warm surprise. Supports -I (headers-only) and -v (verbose mode)."
+            project: "Runs a virtual curl request to fetch details from servers. Try 'curl https://namvera.pages.dev' to get BMO's ANSI art response, 'curl wttr.in' for a weather summary, or 'curl /coffee' for a warm surprise. Supports -I (headers-only) and -v (verbose mode)."
         },
         pwd: {
             desc: "Print working directory.",
@@ -203,16 +201,6 @@
             linux: "N/A",
             project: "Triggers a browser redirect to BMO's personal GitHub profile."
         },
-        tg: {
-            desc: "Telegram contact link redirect.",
-            linux: "N/A",
-            project: "Triggers a browser redirect to start a chat with BMO on Telegram."
-        },
-        telegram: {
-            desc: "Alias for 'tg'.",
-            linux: "N/A",
-            project: "Triggers a browser redirect to start a chat with BMO on Telegram."
-        },
         neofetch: {
             desc: "Fast, highly customizable system info script.",
             linux: "Gathers system information and prints it styled with an ASCII logo.",
@@ -231,7 +219,7 @@
         weather: {
             desc: "Weather forecast CLI query.",
             linux: "N/A (often mapped to 'curl wttr.in')",
-            project: "Fetches local weather forecasts from Open-Meteo or Санкт-Петербург (fallback). You can also control the website's sky canvas by typing: 'weather storm', 'weather snow', 'weather rain', 'weather clouds', or 'weather clear'."
+            project: "Fetches local weather forecasts from Open-Meteo or Point Nemo (fallback). You can also control the website's sky canvas by typing: 'weather storm', 'weather snow', 'weather rain', 'weather clouds', or 'weather clear'."
         },
         whoami: {
             desc: "Print current active user ID.",

@@ -35,7 +35,7 @@ export async function onRequest(context) {
   const { latitude, longitude } = resolveCoordinates(context.request);
   // Two decimals is roughly a kilometre - plenty for a forecast, and coarse
   // enough that the cache key does not pin down an individual house.
-  const cacheKey = new Request(`https://weather.imaginal.dev/?lat=${latitude.toFixed(2)}&lon=${longitude.toFixed(2)}`);
+  const cacheKey = new Request(`https://weather.namvera.pages.dev/?lat=${latitude.toFixed(2)}&lon=${longitude.toFixed(2)}`);
   const cache = typeof caches === "undefined" ? null : caches.default;
 
   if (cache) {

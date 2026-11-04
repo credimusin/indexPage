@@ -82,7 +82,7 @@
                 <div class="vim-splash" style="display: ${isEmpty ? 'block' : 'none'};">
                     <div style="text-align: center; margin-top: 3vh; color: #64ffda; font-weight: bold; font-size: 16px;">B I M - BMO Improved</div>
                     <div style="text-align: center; color: #8892b0; font-size: 12px; margin-top: 2px;">version ${window.imaginalOS.VERSION}</div>
-                    <div style="text-align: center; color: #8892b0; font-size: 11px;">by Maksim B</div>
+                    <div style="text-align: center; color: #8892b0; font-size: 11px;">by BMO (8-Bit Division)</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 13px; margin-top: 18px; font-style: italic; text-shadow: 0 0 8px rgba(255, 121, 198, 0.4);">"From here, you can never truly escape!"</div>
                     <div style="text-align: center; color: #ff79c6; font-size: 11px; margin-top: 2px;">(Just kidding, type :q! to force quit)</div>
 

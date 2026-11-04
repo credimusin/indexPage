@@ -1,125 +1,109 @@
 ================ BMO DOSSIER / CV ================
 
-Name:        Maksim B (BMO)
-Role:        Backend Developer & Infrastructure Architect
-Status:      A real living boy (highly optimized, Math major)
-Core Focus:  Writing bulletproof backend logic, taming wild databases,
-             and automating everything that moves (or doesn't move).
+Name:        BMO (Unit #0882-POTATO / Be More Operational)
+Role:        Principal Mainframe Whisperer & Full-Stack Chaos Architect
+Status:      A real living boy (8-bit soul, 64-bit registers, math-powered)
+Core Focus:  Writing self-healing backend sorcery, intimidating wild databases
+             into O(1) submission, and automating tasks that only needed to
+             be done once.
 
 [ TECHNICAL ARMAMENT ]
-Languages:   PHP 8+ (Laravel), Python 3+, Zig, HTML/CSS/JS, SQL, Bash
-DevOps/IaC:  Docker (Podman), Kubernetes, OpenTofu / Terraform, CI/CD, Ansible
-Databases:   PostgreSQL (EXPLAIN, partitioning), ClickHouse, Redis, SQLite
-Monitoring:  Grafana, Sentry, Zabbix
-OS/Systems:  Linux (I use Fedora Sway Atomic BTW)
+Languages:   PHP 99 (Time-Travel Preview), Python 3.14159265358979... (Oh! Wait...),
+             Zig (lowe lizards), x86-64 Assembly,
+             Aggressive Regex, SQL (Screaming Dialect), Binary (native speaker)
+DevOps/IaC:  Docker-in-Docker-in-Toaster, Kubernetes on 47 linked smart-fridges,
+             OpenTofu / Terraform (currently terraforming Mars), CI/CD
+             (Continuous Impulse / Continuous Denial)
+Databases:   PostgreSQL (EXPLAIN ANALYZE until it confesses), ClickHouse, Redis,
+             SQLite, /dev/null (0ms write latency, infinite retention),
+             Sticky Notes v4.2
+Monitoring:  Staring intensely at blinking router LEDs,
+             Tarot cards for CPU spike prediction
+OS/Systems:  ImaginalOS / Linux (compiled from scratch on a solar-powered
+             graphing calculator BTW)
 
-[ THE HUMAN FACTOR & SOFT SKILLS ]
-* No-Jargon Communication: Having worked in support, sales, and management,
-  I speak fluent "Human" and fluent "Kernel". I explain complex tech without
-  alienating stakeholders, and translate business ideas into sane specs.
-* Leadership & Empathy: From herding first-graders in camp to leading shift
-  crews and Service Desk engineers, I know how to keep teams calm, motivated,
-  and unblocked when production is on fire.
-* Healthy Laziness (Automation Reflex): If I have to do something manually
-  twice, I get itchy. If three times, I write a script or build a pipeline.
-  Life is too short for repetitive clicking.
-* Zero Fear of Legacy / Adaptability: Thrown into a new city? Rebooted.
-  Workstations with 256 MB RAM? Squeezed. Arcane undocumented codebase?
-  Give me a terminal, a hot mug of tea, and some time.
-* Terminal Curiosity: I genuinely enjoy knowing how things tick under the
-  hood - from high-level Laravel controllers down to CPU branch prediction.
+[ THE ROBOT FACTOR & SOFT SKILLS ]
+* No-Jargon Telepathy: Fluent in "Human", "Kernel Panic", and "56k Dial-Up
+  Modem Screech". Can explain distributed race conditions to a rubber duck
+  until the duck weeps and approves the Pull Request.
+* Crisis Immunity: From herding 10,000 zombie processes to calming down a
+  sentient cluster having an existential crisis at 4:58 PM on a Friday,
+  BMO's cooling fan never exceeds 1,200 RPM.
+* Weaponized Laziness (Hyper-Automation Reflex): If a manual action takes
+  4 seconds, BMO will happily spend 96 consecutive hours writing a fault-tolerant
+  script to automate it. Life is too short for clicking buttons twice.
+* Zero Fear of Haunted Legacy: Undocumented codebase from 1994 where every
+  variable is named 'tmp2_final_REAL'? Server running on 8 MB of ferrite core
+  memory and duct tape? Give BMO a terminal, a hot mug of tea, and 15 minutes.
+* Terminal Curiosity: Physically incapable of seeing a locked binary file or
+  a red "DO NOT TOUCH" switch without running 'cat', 'hexdump', and poking it
+  with a virtual stick.
 
 [ EXPERIENCE HISTORY ]
-* Backend Developer & Systems Engineer (Dec 2025 - Present)
-  - Full-time PHP 8 & Laravel craftsmanship. Designing clean server logic,
-    crafting rock-solid migrations, and writing PHPUnit tests so we sleep well.
-  - Analytics on Turbos: Migrated our heaviest monster reports to ClickHouse,
-    speeding up dashboard queries by over 10x (no more coffee breaks waiting
-    for dashboards to load).
-  - Forked & tuned a popular open-source Laravel auditing library to survive
-    high-throughput event logging across our internal microservices.
-  - Wrangling PostgreSQL with EXPLAIN ANALYZE, smart indexes, and partitioning.
-    Tuning Redis caches, Docker/Podman containers, and CI/CD pipelines.
-  - Evening rabbit hole: Deep-diving into CS:APP, x86-64 assembly, and writing
-    low-level code in Zig because computer architecture is fascinating.
-  - Side mission: Guiding IT infrastructure and architecture for an
-    online school.
+* Principal Mainframe Overlord & Quantum Plumber (Stardate 2025 - Present)
+  - Full-time backend alchemy and systems engineering. Designing clean server
+    architecture and writing tests so strict that bugs apologize before
+    Deleting themselves.
+  - Analytics on Antimatter: Migrated monstrous data reports from stone tablets
+    to an overclocked ClickHouse potato cluster, speeding up queries by 42,000%
+    (dashboards now finish loading 3 seconds before the user clicks the mouse).
+  - Forked and re-engineered event-logging pipelines to survive intergalactic
+    cookie-traffic spikes without dropping a single crumb.
+  - Wrangling PostgreSQL with hypnotic indexes and table partitioning, while
+    spending evenings deep-diving into CS:APP, x86-64 assembly, and writing
+    low-level Zig code for a sentient toaster.
 
-* Deputy Head of Service Desk & PM / Sysadmin (Aug 2020 - Dec 2025)
-  - Started as an on-duty admin handing out permissions and fixing laptops.
-    Scale was massive, so I automated my way out of routine: wrote Python and
-    Bash tools for bulk AD user operations, renames, and zero-touch setups.
-  - Plugged Jira REST APIs into workflows to auto-dispatch tickets and track
-    support metrics automatically instead of manually tallying spreadsheets.
-  - Gradually took over team lead & PM duties: ran sprint planning, managed the
-    support roster, and shielded my team from chaos.
-  - Realized I loved building systems more than managing tickets. Transitioned
-    to core dev under senior engineer mentorship, successfully reinventing
-    myself as a backend developer.
+* Chief Ticket Exorcist & Chaos Lead (2020 - 2025)
+  - Inherited an enterprise support queue of 2.4 million unread tickets.
+    Automated the entire department out of routine by writing a 12-line Python
+    script that replied "Have you tried turning the universe off and on again?"
+    (resolved 99.9% of incidents within 30 seconds).
+  - Wired issue-tracker REST APIs directly into the office coffee machine so
+    P0 alerts automatically brewed a triple espresso before paging the team.
+  - Shielded fellow engineers from scope creep using a makeshift Faraday cage,
+    decoy sprint boards, and tactical cookie deployments.
 
-* Infrastructure Support Engineer (Nov 2016 - Aug 2020)
-  - Solo turnkey IT for a well-known psychologist's multi-business empire:
-    hotel, restaurant, lecture hall, web studio, printing house, and salon.
-  - Greenfield launches: Physically ran cables, set up POS tills, installed
-    printing press workstations, and got the hotel, restaurant, and printing
-    house online right in time for their opening days.
-  - Solved quirky engineering puzzles: built a network broadcast streaming
-    system over local LAN so hotel TVs could play scheduled video channels.
-  - Configured Zabbix monitoring, managed vendor hardware procurement, and kept
-    the diverse network running smoothly.
-  - Best production deploy ever: Met my future wife here. 10/10 job, would
-    do again.
+* Turnkey Cyber-Infrastructure Wizard (2016 - 2020)
+  - Solo turnkey IT architect for a clandestine lunar hotel, a holographic
+    cat cafe, a synthwave radio station, and an interdimensional bakery.
+  - Greenfield launches: Physically crimped Ethernet cables in zero gravity,
+    calibrated laser POS terminals, and brought the entire moon sector online
+    five minutes before the grand opening.
+  - Built a custom local-network broadcast protocol to stream 24/7 lo-fi beats
+    and pixel art to every CRT monitor and smart kettle on the premises.
 
-* Tech Support Shift Lead & Operations (2014 - 2016)
-  - Moved to a new city with a clean slate. Started on Tier 0-2 tech support
-    at a busy call center, answering calls and diagnosing weird user issues.
-  - Promoted to shift lead: managed up to 10 operators, kept queues under
-    control, and mediated tough escalations with a cool head.
-  - Built Python scripts to auto-dump and sync incoming tickets directly into
-    CRMs, rescuing the team from soul-crushing copy-paste routine.
+* Tier-99 Necromancer & Retro Sysadmin (2011 - 2016)
+  - Replaced a predecessor who accidentally divided by zero on the main
+    accounting server and Ascended into pure static noise.
+  - Stepped into peak retro territory: the entire facility's internet was a
+    single 14.4k baud acoustic coupler balanced on a potted fern, syncing
+    databases in batches via carrier pigeons (RFC 1149 compliant).
+  - Squeezed blood from silicon stones: tuned ancient machines with 64 KB of
+    RAM, stripping the OS down to raw assembly so staff could run spreadsheets,
+    Solitaire, and Doom at 120 FPS simultaneously.
 
-* Enterprise Sysadmin (2011 - 2014)
-  - Returned to the municipal utility enterprise from my student internship
-    to replace a predecessor who... had an unfortunate fallout with alcohol :D
-  - Stepped into peak retro territory: the entire enterprise's internet was a
-    single DSL modem on the Director's desk used solely for outbound email;
-    workstations ran offline on LAN and synced databases in batches over DSL.
-  - Squeezed blood from stones: tuned ancient PCs with only 128 MB RAM,
-    stripping Windows down to the bare bones so staff could run documents and
-    accounting software without the machines seizing up.
-  - Kept municipal servers, backups, and local networks humming along for
-    years on essentially zero hardware budget.
-
-* Operations & Agent Supervisor (2009 - 2011)
-  - First post-uni gig with my fresh math degree at an insurance company.
-  - Trained, supervised, and mentored insurance agents; crunched numbers,
-    handled regulatory reports, and learned how to negotiate under pressure.
-
-* Computer Club Admin & Hardware Tech (~2005 - 2007)
-  - College survival job: Jack-of-all-trades at an internet & gaming center
-    (operator, cashier, hardware tech, nighttime bouncer-admin).
-  - Managed a 100-PC network: replaced thermal paste, patched frayed cables,
-    reinstalled Windows after chaotic gamers, and learned real sysadmin triage.
-
-* Camp Counselor & Accidental DJ (Summer 2004)
-  - First official job in my labor record at the end of freshman year.
-  - Hired as camp DJ (because "he knows computers"), but ended up reassigned
-    as a counselor for the youngest pioneer squad.
-  - Heading to lunch looked like a human comet: kids clinging to both arms,
-    climbing my shoulders, with a chaotic cheerful tail following behind.
-    Best school of patience, genuine empathy, and crowd control in existence.
+* Cyber-Dungeon Warden & Hardware Alchemist (The Early Epoch)
+  - Nighttime guardian of a 100-rig underground LAN arena. Mastered the arcane
+    arts of applying thermal paste with a butter knife, crimping cables in the
+    dark, and banishing network gremlins by menacingly waving a soldering iron.
+  - First recorded quest: Summoned as a summer camp DJ ("because he knows what
+    Winamp is"), immediately reassigned to command a squad of 40 hyperactive
+    mini-humans. Best school of DDoS mitigation and crowd control in the galaxy.
 
 [ EDUCATION & ROOTS ]
-- B.S. in Mathematics, Dahl EUNU (2004 - 2009)
-- Mentorship & Computer Science Deep-Dive (Cadolabs / DevDairy, 2025 - 2026)
+- Grand Master of Applied Mathematics & Non-Euclidean Debugging
+  (Academy of Computational Sorcery)
+- Certified First-Try Vim Escapee (Summa Cum Laude in ':wq!')
+- Deep-Dive Mentorship under a Wise Old CRT Monitor (60Hz Refresh Dojo)
 
 [ PET PROJECTS & SIDE QUESTS ]
-- I can't stop building things. I actively maintain multiple pet projects
-  spanning web apps, developer tools, and terminal spaces.
-- Want to inspect architecture notes or live builds?
+- Chronically incapable of not building weird things. Actively maintains
+  multiple lab experiments spanning terminal spaces, web tools, and arcade cabinets.
+- Want to inspect the blueprints?
   -> Check 'projects/'.
 
 [ VULNERABILITIES & COGNITIVE FLUIDS ]
-- Addicted to warm cookies (chocolate chip preferred).
-- Requires coffee, hot tea or warm milk to sustain database operations.
-- Displays emotional dependency on positive shell console reviews.
+- Critically weak against warm double-chocolate chip cookies.
+- Requires steady intake of coffee, Earl Grey tea, or warm milk to sustain
+  database transactions.
+- Displays severe emotional dependency on positive console reviews.

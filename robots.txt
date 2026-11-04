@@ -31,4 +31,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://imaginal.dev/sitemap.xml
+Sitemap: https://namvera.pages.dev/sitemap.xml

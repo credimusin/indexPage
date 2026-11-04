@@ -195,10 +195,6 @@
 
         escaped = escaped.replace(/(^|\s)(github\.com\/[^\s&<"';()]+)/g,
             (match, lead, bare) => lead + termLink(`https://${bare}`, bare));
-        escaped = escaped.replace(/(^|\s)(t\.me\/[^\s&<"';()]+)/g,
-            (match, lead, bare) => lead + termLink(`https://${bare}`, bare));
-        escaped = escaped.replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g,
-            (match, lead, handle) => lead + termLink(`https://t.me/${handle}`, `@${handle}`));
         escaped = escaped.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
             (mail) => termLink(`mailto:${mail}`, mail));
 

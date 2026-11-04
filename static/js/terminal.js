@@ -483,10 +483,6 @@
             case 'github':
                 await os.runGit();
                 break;
-            case 'tg':
-            case 'telegram':
-                await os.runTelegram();
-                break;
             case 'bmo':
                 os.runBmoEasterEgg();
                 break;

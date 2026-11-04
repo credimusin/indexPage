@@ -34,7 +34,6 @@
         const style = 'color: #64ffda; text-decoration: underline; cursor: pointer;';
         return escaped
             .replace(/(https?:\/\/[^\s&<"';()]+)/g, `<a href="$1" target="_blank" rel="noopener noreferrer" style="${style}">$1</a>`)
-            .replace(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g, `$1<a href="https://t.me/$2" target="_blank" rel="noopener noreferrer" style="${style}">@$2</a>`)
             .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, `<a href="mailto:$1" style="${style}">$1</a>`);
     }
 
@@ -547,7 +546,7 @@
         let out = `${logo}`;
         out += `<span style="color: #50fa7b;">---------------------------------------------</span><br>`;
         out += `<span class="neokey">OS:</span>          ImaginalOS v${window.imaginalOS.VERSION}-potato (Potato Battery Edition)<br>`;
-        out += `<span class="neokey">Host:</span>        imaginal.dev<br>`;
+        out += `<span class="neokey">Host:</span>        namvera.pages.dev<br>`;
         out += `<span class="neokey">Uptime:</span>      ${Math.round(performance.now() / 1000)} seconds<br>`;
         out += `<span class="neokey">Shell:</span>       bush v0.9-glitch<br>`;
         out += `<span class="neokey">Resolution:</span>  ${td.screenRes} (Viewport: ${td.viewportRes})<br>`;
@@ -1141,10 +1140,6 @@ ${rows.join('\n')}
         return runExternalLink('🐱', 'GITHUB', 'https://github.com/credimusin');
     }
 
-    function runTelegram() {
-        return runExternalLink('✈️', 'TELEGRAM', 'https://t.me/credimusin');
-    }
-
     const SUDO_PASSWORDS = ['love', 'admin', 'bmo'];
     let sudoAttempts = 0;
 
@@ -1352,10 +1347,10 @@ ${rows.join('\n')}
 
                 if (td.lat && td.lon) {
                     const R = 6371;
-                    const lat1 = 59.9386 * Math.PI / 180;
+                    const lat1 = -48.8767 * Math.PI / 180;
                     const lat2 = td.lat * Math.PI / 180;
-                    const dlat = (td.lat - 59.9386) * Math.PI / 180;
-                    const dlon = (td.lon - 30.3141) * Math.PI / 180;
+                    const dlat = (td.lat - (-48.8767)) * Math.PI / 180;
+                    const dlon = (td.lon - (-123.3933)) * Math.PI / 180;
 
                     const a = Math.sin(dlat/2) * Math.sin(dlat/2) +
                               Math.cos(lat1) * Math.cos(lat2) *
@@ -1364,9 +1359,9 @@ ${rows.join('\n')}
                     const dist = Math.round(R * c);
 
                     if (dist < 10) {
-                        htmlContent += `<br>• <b>BMO Distance Check:</b> You are extremely close. BMO can almost smell your coffee.`;
+                        htmlContent += `<br>• <b>BMO Distance Check:</b> Wait... are you floating in a submarine at Point Nemo?!`;
                     } else {
-                        htmlContent += `<br>• <b>BMO Distance Check:</b> BMO's server is roughly ${dist} km away from your chair.`;
+                        htmlContent += `<br>• <b>BMO Distance Check:</b> BMO's deep-ocean relay (Point Nemo) is roughly ${dist} km from your chair.`;
                     }
                 }
 
@@ -1549,7 +1544,7 @@ ${rows.join('\n')}
         let isLocal = false;
 
         const isLocalHost = cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1');
-        const isImaginal = cleanUrl.includes('imaginal.dev') || cleanUrl.startsWith('/') || isLocalHost;
+        const isImaginal = cleanUrl.includes('namvera.pages.dev') || cleanUrl.startsWith('/') || isLocalHost;
 
         if (isImaginal || cleanUrl === '') {
             isLocal = true;
@@ -1681,7 +1676,6 @@ ${rows.join('\n')}
     ns.runGame = runGame;
     ns.openVim = openVim;
     ns.runGit = runGit;
-    ns.runTelegram = runTelegram;
     ns.runSudo = runSudo;
     ns.submitSudoPassword = submitSudoPassword;
     ns.runDestruct = runDestruct;
